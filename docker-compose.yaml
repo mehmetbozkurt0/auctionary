@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  # [cite_start]Milisaniyelik teklifler ve anlık durum (state) için [cite: 35, 38]
+  redis:
+    image: redis:7-alpine
+    container_name: auctionary_redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+
+  # [cite_start]Açık artırma bittikten sonra sonuçları kalıcı saklamak için [cite: 39, 40]
+  postgres:
+    image: postgres:15-alpine
+    container_name: auctionary_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auctionary_db
+    ports:
+      - "5432:5432"
