@@ -3,38 +3,72 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/mehmetbozkurt0/auctionary/internal/repository"
+	"github.com/gorilla/websocket"
 )
 
-func main() {
-	// Redis bağlantısını başlat
-	rdb := repository.NewRedisClient()
+var upgrader = websocket.Upgrader{
+	ReadBufferSize: 1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w,r,nil)
+	if err != nil {
+		log.Println("WebSocket Upgrade error:", err)
+		return
+	}
+	defer conn.Close()
+
+	fmt.Println("New bidder connected!")
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("Connection lost: ",err)
+			break
+		}
+		fmt.Printf("Incoming message: %s\n",p)
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			log.Println("Writing error: ",err)
+			break
+		}
+	}
+}
+
+func main() {
+	rdb := repository.NewRedisClient()
 	err := rdb.Ping(repository.Ctx).Err()
 	if err != nil {
-		log.Fatalf("Redis bağlantısı kurulamadı: %v", err)
+		log.Fatalf("Cannot connect to Redis: %v", err)
 	}
+	fmt.Println("Redis connection is active!")
 
-	fmt.Println("🚀 Auctionary Backend Başarıyla Başlatıldı!")
-	fmt.Println("✅ Redis Bağlantısı Aktif.")
-	auctionID := "item101"
-	initialPrice := "500.0"
+	http.HandleFunc("/ws",handleWebSocket)
 
-	err = rdb.Set(repository.Ctx, auctionID, initialPrice, 0).Err()
-	if err != nil {
-		log.Fatalf("Veri yazılamadı: %v",err)
+	fmt.Println("Auctionary Backend has started to listen port 8080")
+	if err := http.ListenAndServe(":8080",nil); err != nil {
+		log.Fatal("Server error: ",err)
 	}
-	fmt.Printf("Redis'e yazıldı --> ID: %s, Başlangıç fiyatı: %s TL\n",auctionID, initialPrice)
-
-	val, err := rdb.Get(repository.Ctx, auctionID).Result()
-	if err != nil {
-		log.Fatalf("Veri okunamadı: %v",err)
-	}
-	fmt.Println("Redis'ten okunan güncel fiyat: %s",val)
-
-
-
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
