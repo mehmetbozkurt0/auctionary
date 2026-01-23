@@ -17,6 +17,7 @@ import (
 var (
 	rdb *redis.Client
 	biddingService *service.BiddingService
+	pgDB *repository.PostgresDB
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {return true},
 	}
@@ -38,11 +39,17 @@ func checkAuctions() {
 		}
 
 		if time.Now().After(auction.EndTime) {
-			fmt.Printf("ITEM SOLD!! Winner: %s - %.2f TL", auction.WinnerID, auction.CurrentPrice)
+			fmt.Printf("ITEM SOLD!! Winner: %s - %.2f TL\n", auction.WinnerID, auction.CurrentPrice)
 
 			auction.IsActive = false
 			updateData, _ := json.Marshal(auction)
 			rdb.Set(repository.Ctx, "auction:item101", updateData, 0)
+
+			if err := pgDB.SaveFinishedAuction(auction); err != nil {
+				log.Printf("Database save error: %v", err)
+			} else {
+				fmt.Println("Results has saved to the database successfully!")
+			}
 
 			endEvent := models.BaseEvent{
 				Type: models.EventAuctionEnd,
@@ -131,11 +138,17 @@ func seedRedisData() {
 
 func main() {
 	rdb = repository.NewRedisClient()
-	err := rdb.Ping(repository.Ctx).Err()
-	if err != nil {
+	if err := rdb.Ping(repository.Ctx).Err(); err != nil {
 		log.Fatalf("Cannot connect to Redis: %v", err)
 	}
 	fmt.Println("Redis connection is active!")
+
+	var err error
+	pgDB, err = repository.NewPostgresDB()
+	if err != nil {
+		log.Fatalf("Postgres connection error: %v", err)
+	}
+	pgDB.InitTables()
 
 	biddingService = service.NewBiddingService(rdb)
 
