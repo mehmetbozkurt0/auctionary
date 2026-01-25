@@ -1,16 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"encoding/json"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/mehmetbozkurt0/auctionary/internal/api"
 	"github.com/mehmetbozkurt0/auctionary/internal/models"
 	"github.com/mehmetbozkurt0/auctionary/internal/repository"
 	"github.com/mehmetbozkurt0/auctionary/internal/service"
-	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,6 +24,10 @@ var (
 		CheckOrigin: func(r *http.Request) bool {return true},
 	}
 )
+
+func ginWebSocketHandler(c *gin.Context){
+	handleWebSocket(c.Writer, c.Request)
+}
 
 func checkAuctions() {
 	ticker := time.NewTicker(1*time.Second)
@@ -138,31 +144,41 @@ func seedRedisData() {
 
 func main() {
 	rdb = repository.NewRedisClient()
-	if err := rdb.Ping(repository.Ctx).Err(); err != nil {
-		log.Fatalf("Cannot connect to Redis: %v", err)
-	}
-	fmt.Println("Redis connection is active!")
-
 	var err error
 	pgDB, err = repository.NewPostgresDB()
 	if err != nil {
-		log.Fatalf("Postgres connection error: %v", err)
+		log.Fatalf("Postgres error: %v", err)
 	}
 	pgDB.InitTables()
 
 	biddingService = service.NewBiddingService(rdb)
-
 	seedRedisData()
 
 	go subscribeToAuctionEvents()
 	go checkAuctions()
 
-	http.HandleFunc("/ws",handleWebSocket)
+	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
 
-	fmt.Println("Auctionary Backend has started to listen port 8080")
-	if err := http.ListenAndServe(":8080",nil); err != nil {
-		log.Fatal("Server error: ",err)
-	}
+	apiHandler := api.NewHandler(pgDB, rdb)
+
+	router.POST("/register", apiHandler.Register)
+	router.POST("/login", apiHandler.Login)
+	router.POST("/auctions", apiHandler.CreateAuction)
+	router.GET("/auctions", apiHandler.ListAuctions)
+
+	router.GET("/ws", ginWebSocketHandler)
+
+	fmt.Println("🚀 Auctionary API listening on port 8080...")
+	router.Run(":8080")
 }
 
 
