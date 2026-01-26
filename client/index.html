@@ -2,68 +2,346 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Auctionary Test Ajanı</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auctionary Live Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        #log { background: #f0f0f0; padding: 10px; border: 1px solid #ccc; height: 300px; overflow-y: scroll; }
-        .sent { color: blue; }
-        .received { color: green; }
-        .error { color: red; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hidden { display: none !important; }
+
+        /* Liste Kartları */
+        .auction-item { cursor: pointer; transition: all 0.2s; border-left: 5px solid transparent; }
+        .auction-item:hover { background-color: #e9ecef; transform: translateX(5px); }
+        .auction-item.active { background-color: #e3f2fd; border-left-color: #0d6efd; }
+        .auction-item.sold { opacity: 0.7; background-color: #f8f9fa; }
+
+        /* Detay Paneli */
+        .panel-container { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .price-display { font-size: 3.5rem; font-weight: 800; color: #212529; }
+        .timer-badge { font-size: 1.5rem; padding: 10px 30px; border-radius: 50px; background: #fff3cd; color: #856404; font-weight: bold; display: inline-block; margin-bottom: 20px; }
+        .timer-badge.ended { background: #ffcdd2; color: #b71c1c; }
+
+        /* Log Alanı */
+        #log-area { height: 200px; overflow-y: auto; background: #1a1a1a; color: #00ff00; font-family: monospace; font-size: 0.85rem; border-radius: 10px; padding: 15px; }
     </style>
 </head>
 <body>
-<h2>⚡ Auctionary WebSocket Testi</h2>
-<button onclick="sendBid()">💰 500 TL Teklif Ver</button>
-<button onclick="sendInvalid()">❌ Bozuk Veri Yolla</button>
 
-<h3>Loglar:</h3>
-<div id="log"></div>
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold display-5">⚡ Auctionary <span class="text-primary">Live</span></h1>
+    </div>
+
+    <div id="auth-section" class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card shadow border-0 p-4">
+                <h4 class="text-center mb-4">Giriş Yap</h4>
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="Email" value="mehmet@test.com">
+                    <label>Email Adresi</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Şifre" value="123">
+                    <label>Şifre</label>
+                </div>
+                <button onclick="login()" class="btn btn-primary w-100 py-2 fw-bold">Giriş Yap 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-section" class="row g-4 hidden">
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">📋 Aktif İlanlar</h6>
+                    <button onclick="loadAuctions()" class="btn btn-sm btn-light text-primary">↻ Yenile</button>
+                </div>
+                <div class="list-group list-group-flush overflow-auto" id="auction-list" style="max-height: 500px;">
+                    <div class="text-center p-4 text-muted">Yükleniyor...</div>
+                </div>
+                <div class="card-footer bg-light p-3">
+                    <div class="input-group">
+                        <input type="text" id="new-item-name" class="form-control" placeholder="Ürün Adı">
+                        <input type="number" id="new-item-price" class="form-control" placeholder="Fiyat" style="max-width: 80px;">
+                        <button onclick="createAuction()" class="btn btn-success fw-bold">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div id="active-auction-panel" class="panel-container mb-4 hidden">
+                <div class="card-body text-center py-5 position-relative">
+                    <span id="status-badge" class="position-absolute top-0 end-0 m-3 badge bg-secondary">DURUM</span>
+
+                    <h2 id="panel-product-name" class="fw-bold mb-4">Ürün Seçilmedi</h2>
+
+                    <div id="current-price" class="price-display">0 TL</div>
+                    <p class="text-muted mb-4">Kazanan: <strong id="current-winner" class="text-dark">-</strong></p>
+
+                    <div id="timer-container" class="timer-badge">
+                        <span id="timer">--:--</span>
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="input-group input-group-lg">
+                                <input type="number" id="bid-amount" class="form-control text-center fw-bold" placeholder="Tutar">
+                                <button onclick="sendBid()" id="bid-btn" class="btn btn-danger px-4">TEKLİF VER 🔥</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-dark text-white">
+                <div class="card-header border-bottom border-secondary py-2 small bg-dark text-white">📡 Sistem Logları</div>
+                <div id="log-area"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    // WebSocket bağlantısını aç
-    const ws = new WebSocket("ws://localhost:8080/ws");
+    const API_URL = "http://localhost:8080";
+    let ws;
+    let currentUser = null;
+    let selectedAuctionID = null;
+    let timerInterval = null;
+    let targetEndTime = 0;
 
-    ws.onopen = function() {
-        log("✅ Sunucuya bağlanıldı!", "received");
-    };
+    // --- HELPER: GÜVENLİ DOM ERİŞİMİ ---
+    // Hata almamak için element var mı diye kontrol eden yardımcı fonksiyon
+    function setElementText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.innerText = text;
+    }
+    function setElementValue(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    }
 
-    ws.onmessage = function(event) {
-        log("📩 Sunucudan cevap: " + event.data, "received");
-    };
+    // --- 1. GİRİŞ İŞLEMLERİ ---
+    async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                currentUser = { id: data.user_id, username: data.username, token: data.token };
+                log(`✅ Giriş Başarılı! Hoşgeldin ${currentUser.username}`);
+                document.getElementById("auth-section").classList.add("hidden");
+                document.getElementById("dashboard-section").classList.remove("hidden");
+                connectWebSocket();
+                loadAuctions();
+            } else { alert(data.error); }
+        } catch (e) { alert("Sunucuya bağlanılamadı."); }
+    }
 
-    ws.onclose = function() {
-        log("⚠️ Bağlantı koptu.", "error");
-    };
+    // --- 2. LİSTELEME ---
+    async function loadAuctions() {
+        try {
+            const res = await fetch(`${API_URL}/auctions`);
+            const auctions = await res.json();
+            const listEl = document.getElementById("auction-list");
+            if (!listEl) return; // Güvenlik kontrolü
+            listEl.innerHTML = "";
 
-    ws.onerror = function(err) {
-        log("❌ Hata oluştu.", "error");
-    };
+            if(!auctions || auctions.length === 0) {
+                listEl.innerHTML = `<div class="p-4 text-center text-muted">Aktif ürün yok.</div>`;
+                return;
+            }
 
-    // TEKLİF GÖNDERME FONKSİYONU
+            auctions.forEach(auction => {
+                // Zaman Kontrolü
+                const now = new Date().getTime();
+                const endTime = new Date(auction.end_time).getTime();
+                const isExpired = now > endTime;
+                const isSold = !auction.is_active || isExpired;
+
+                const activeClass = selectedAuctionID === auction.id ? 'active' : '';
+                const soldClass = isSold ? 'sold' : '';
+                const badgeHtml = isSold
+                    ? '<span class="badge bg-danger">SATILDI</span>'
+                    : '<span class="badge bg-success">AKTİF</span>';
+
+                const item = document.createElement("div");
+                item.className = `list-group-item auction-item p-3 ${activeClass} ${soldClass}`;
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">${auction.product_name}</span>
+                        ${badgeHtml}
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 align-items-center">
+                        <small class="text-muted">ID: ${auction.id}</small>
+                        <span class="fw-bold">${auction.current_price} TL</span>
+                    </div>
+                `;
+
+                // Tıklama Olayı
+                item.onclick = () => {
+                    selectedAuctionID = auction.id;
+                    loadAuctions(); // Listeyi boyamak için tekrar yükle
+                    renderDetailPanel(auction); // Paneli güncelle
+                };
+
+                listEl.appendChild(item);
+
+                // Eğer şu an bu ürün seçiliyse, panel verisini de güncelle (Sync)
+                if (selectedAuctionID === auction.id) {
+                    renderDetailPanel(auction);
+                }
+            });
+
+        } catch (e) {
+            console.error(e);
+            log("❌ Liste yüklenemedi: " + e.message);
+        }
+    }
+
+    // --- 3. DETAY PANELİ (GÜVENLİ RENDER) ---
+    function renderDetailPanel(auction) {
+        const panel = document.getElementById("active-auction-panel");
+        if (!panel) return;
+        panel.classList.remove("hidden");
+
+        // Durum Tespiti
+        const now = new Date().getTime();
+        const endTime = new Date(auction.end_time).getTime();
+        const isExpired = now > endTime;
+        const isSold = !auction.is_active || isExpired;
+
+        // UI Güncelleme
+        setElementText("panel-product-name", auction.product_name);
+        setElementText("current-price", auction.current_price + " TL");
+        setElementText("current-winner", auction.winner_id || "-");
+        setElementValue("bid-amount", auction.current_price + 10);
+
+        const badgeEl = document.getElementById("status-badge");
+        const btnEl = document.getElementById("bid-btn");
+        const timerBox = document.getElementById("timer-container");
+
+        if (isSold) {
+            // SATILDI MODU
+            if (badgeEl) { badgeEl.className = "position-absolute top-0 end-0 m-3 badge bg-danger"; badgeEl.innerText = "SATILDI"; }
+            if (btnEl) { btnEl.disabled = true; btnEl.innerText = "KAPANDI 🔒"; }
+            if (timerBox) { timerBox.classList.add("ended"); }
+            setElementText("timer", "BİTTİ");
+
+            if (timerInterval) clearInterval(timerInterval); // Sayacı durdur
+        } else {
+            // AKTİF MODU
+            if (badgeEl) { badgeEl.className = "position-absolute top-0 end-0 m-3 badge bg-success"; badgeEl.innerText = "AKTİF"; }
+            if (btnEl) { btnEl.disabled = false; btnEl.innerText = "TEKLİF VER 🔥"; }
+            if (timerBox) { timerBox.classList.remove("ended"); }
+
+            // Sayacı Başlat
+            targetEndTime = endTime;
+            startTimer();
+        }
+    }
+
+    // --- 4. ZAMANLAYICI ---
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        updateTimerLogic();
+        timerInterval = setInterval(updateTimerLogic, 100);
+    }
+
+    function updateTimerLogic() {
+        const now = new Date().getTime();
+        const diff = targetEndTime - now;
+
+        // Güvenlik: Element yoksa dur
+        const timerEl = document.getElementById("timer");
+        if (!timerEl) return;
+
+        if (diff <= 0) {
+            timerEl.innerText = "0.0 sn";
+            // Not: Bitiş eventi backend'den gelince tam kapanacak
+        } else {
+            timerEl.innerText = (diff / 1000).toFixed(1) + " sn";
+        }
+    }
+
+    // --- 5. YENİ ÜRÜN EKLEME ---
+    async function createAuction() {
+        const name = document.getElementById("new-item-name").value;
+        const price = parseFloat(document.getElementById("new-item-price").value);
+        const id = "item" + Math.floor(Math.random() * 99999);
+
+        if (!name || !price) return;
+
+        try {
+            await fetch(`${API_URL}/auctions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id, product_name: name, starting_price: price })
+            });
+            log(`✨ Yeni Ürün Başlatıldı: ${name}`);
+            setElementValue("new-item-name", "");
+            setElementValue("new-item-price", "");
+            loadAuctions();
+        } catch (e) { log("❌ Oluşturma hatası"); }
+    }
+
+    // --- 6. WEBSOCKET ---
+    function connectWebSocket() {
+        ws = new WebSocket("ws://localhost:8080/ws");
+
+        ws.onopen = () => log("🟢 Canlı Bağlantı Kuruldu");
+        ws.onclose = () => log("⚠️ Bağlantı koptu (Yeniden deneniyor...)");
+        ws.onerror = () => log("❌ Bağlantı hatası");
+
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === "bid_accepted") {
+                    handleBid(msg.payload);
+                } else if (msg.type === "auction_end") {
+                    log(`🏁 [${msg.payload.auction_id}] SATILDI!`);
+                    loadAuctions(); // Listeyi yenilemek yeterli
+                }
+            } catch (e) { console.log("WS Data Error:", event.data); }
+        };
+    }
+
+    function handleBid(payload) {
+        log(`📢 [${payload.auction_id}] Yeni Teklif: ${payload.new_price} TL`);
+
+        // Eğer seçili ürüne teklif geldiyse, süreyi hemen güncelle (Anlık Görsellik)
+        if (selectedAuctionID === payload.auction_id) {
+            targetEndTime = new Date().getTime() + (payload.remaining_time_seconds * 1000);
+        }
+
+        // Her halükarda en doğru veriyi API'den çekip listeyi ve paneli tazele
+        loadAuctions();
+    }
+
     function sendBid() {
-        // Backend'deki 'BidPayload' yapısına uygun JSON
-        const event = {
+        if (!selectedAuctionID || !ws) return;
+        const amount = parseFloat(document.getElementById("bid-amount").value);
+        ws.send(JSON.stringify({
             type: "bid_placed",
             payload: {
-                auction_id: "item101",
-                user_id: "user_mehmet",
-                amount: 500.0
+                auction_id: selectedAuctionID,
+                user_id: currentUser.username,
+                amount: amount
             }
-        };
-        ws.send(JSON.stringify(event));
-        log("📤 Gönderildi: " + JSON.stringify(event), "sent");
+        }));
     }
 
-    function sendInvalid() {
-        ws.send("Bu bir JSON değil, hata vermeli");
-        log("📤 Hatalı veri gönderildi.", "sent");
-    }
-
-    function log(msg, className) {
-        const div = document.getElementById("log");
-        div.innerHTML += `<div class="${className}">${msg}</div>`;
-        div.scrollTop = div.scrollHeight;
+    function log(msg) {
+        const div = document.getElementById("log-area");
+        if (div) div.innerHTML = `<div>> ${msg}</div>` + div.innerHTML;
     }
 </script>
+
 </body>
 </html>

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,8 @@ var (
 	upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {return true},
 	}
+	clients = make(map[*websocket.Conn]bool)
+	clientsMu sync.Mutex
 )
 
 func ginWebSocketHandler(c *gin.Context){
@@ -32,53 +35,66 @@ func ginWebSocketHandler(c *gin.Context){
 func checkAuctions() {
 	ticker := time.NewTicker(1*time.Second)
 	for range ticker.C {
-		val, err := rdb.Get(repository.Ctx, "auction:item101").Result()
+		keys, err := rdb.Keys(repository.Ctx, "auction:*").Result()
 		if err != nil {
 			continue
 		}
 
-		var auction models.Auction
-		json.Unmarshal([]byte(val), &auction)
-
-		if !auction.IsActive {
-			continue
-		}
-
-		if time.Now().After(auction.EndTime) {
-			fmt.Printf("ITEM SOLD!! Winner: %s - %.2f TL\n", auction.WinnerID, auction.CurrentPrice)
-
-			auction.IsActive = false
-			updateData, _ := json.Marshal(auction)
-			rdb.Set(repository.Ctx, "auction:item101", updateData, 0)
-
-			if err := pgDB.SaveFinishedAuction(auction); err != nil {
-				log.Printf("Database save error: %v", err)
-			} else {
-				fmt.Println("Results has saved to the database successfully!")
+		for _, key := range keys{
+			val, err := rdb.Get(repository.Ctx, key).Result()
+			if err != nil {
+				continue
 			}
 
-			endEvent := models.BaseEvent{
-				Type: models.EventAuctionEnd,
-				Payload: map[string]interface{}{
-					"auction_id": auction.ID,
-					"winner_id": auction.WinnerID,
-					"final_price": auction.CurrentPrice,
-				},
+			var auction *models.Auction
+			if err := json.Unmarshal([]byte(val), &auction); err != nil {
+				continue
 			}
-			repository.PublishEvent(rdb, "auction_events", endEvent)
-		}
 
+			if !auction.IsActive{
+				continue
+			}
+
+			if time.Now().After(auction.EndTime){
+				fmt.Printf("Time's up! %s - Winner: %s\n",auction.ProductName, auction.WinnerID)
+
+				auction.IsActive = false
+				updateData, _ := json.Marshal(auction)
+				rdb.Set(repository.Ctx, key, updateData, 0)
+				pgDB.SaveFinishedAuction(auction)
+
+				endEvent := models.BaseEvent{
+					Type: models.EventAuctionEnd,
+					Payload: map[string]interface{}{
+						"auction_id": auction.ID,
+						"winner_id": auction.WinnerID,
+						"final_price": auction.CurrentPrice,
+					},
+				}
+				repository.PublishEvent(rdb, "auction_events", endEvent)
+			}
+		}
 	}
 }
 
 func subscribeToAuctionEvents() {
 	pubsub := rdb.Subscribe(repository.Ctx, "auction_events")
-
 	ch := pubsub.Channel()
 
 	fmt.Println("Redis Event Bus listening...")
 	for msg := range ch{
-		fmt.Printf("Redis has an update: %s\n",msg.Payload)
+		fmt.Printf("BROADCAST: %s\n",msg.Payload)
+
+		clientsMu.Lock()
+		for client := range clients{
+			err := client.WriteMessage(websocket.TextMessage, []byte(msg.Payload))
+			if err != nil {
+				log.Printf("Message didn't sent! Client will be deleted: %v\n",err)
+				client.Close()
+				delete(clients,client)
+			}
+		}
+		clientsMu.Unlock()
 	}
 }
 
@@ -88,9 +104,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		log.Println("WebSocket Upgrade error:", err)
 		return
 	}
-	defer conn.Close()
 
-	fmt.Println("New bidder connected!")
+	clientsMu.Lock()
+	clients[conn] = true
+	clientsMu.Unlock()
+	fmt.Println("New user joined the broadcast!")
+
+	defer func() {
+		clientsMu.Lock()
+		delete(clients,conn)
+		clientsMu.Unlock()
+		conn.Close()
+		fmt.Println("A user has left the broadcast!")
+	}()
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -114,7 +140,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 			err := biddingService.ProcessBid(repository.Ctx, bidData)
 			if err != nil {
-				log.Println("Bid denied: ",err)
+				errorMsg := map[string]string{"type": "error", "message": err.Error()}
+				conn.WriteJSON(errorMsg)
 			}
 		}
 	}

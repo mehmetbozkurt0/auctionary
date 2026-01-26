@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	_"github.com/lib/pq"
 	"github.com/mehmetbozkurt0/auctionary/internal/models"
@@ -78,7 +79,7 @@ func (p *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 	return user, nil
 }
 
-func (p *PostgresDB) SaveFinishedAuction(auction models.Auction) error {
+func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 	query := `
 		INSERT INTO auctions (id, product_name, starting_price, final_price, winner_id, end_time)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -100,7 +101,7 @@ func (p *PostgresDB) CreateNewAuction(auction *models.Auction) error {
 }
 
 func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
-	query := `SELECT id, product_name, starting_price, final_price, winner_id, end_time FROM auctions WHERE end_time > NOW()`
+	query := `SELECT id, product_name, starting_price, final_price, winner_id, end_time FROM auctions ORDER BY end_time DESC`
 
 	rows, err := p.DB.Query(query)
 	if err != nil {
@@ -117,7 +118,13 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 			return nil, err
 		}
 		a.WinnerID = winnerID.String
-		a.IsActive = true
+
+		if time.Now().Before(a.EndTime) {
+			a.IsActive = true
+		} else {
+			a.IsActive = false
+		}
+
 		auctions = append(auctions, a)
 	}
 	return auctions, nil

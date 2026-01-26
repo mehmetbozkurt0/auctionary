@@ -67,34 +67,45 @@ func (h *Handler) Login(c *gin.Context) {
 func (h *Handler) CreateAuction(c *gin.Context) {
 	var auction models.Auction
 	if err := c.ShouldBindJSON(&auction); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data format!"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz veri formatı!"})
 		return
 	}
 
 	auction.CurrentPrice = auction.StartingPrice
 	auction.IsActive = true
-	auction.EndTime = time.Now().Add(1 * time.Hour)
+	auction.EndTime = time.Now().Add(3 * time.Minute)
 
 	if err := h.Repo.CreateNewAuction(&auction); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot save to the database: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Veritabanı hatası: " + err.Error()})
 		return
 	}
 
 	data, _ := json.Marshal(auction)
-	err := h.Redis.Set(context.Background(), "auction:"+auction.ID, data, 0).Err()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Cannot write to redis"})
-		return
-	}
+	if err := h.Redis.Set(context.Background(), "auction:"+auction.ID, data, 0).Err(); err != nil {}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Auction started!", "auction": auction})
+	c.JSON(http.StatusCreated, gin.H{"message": "Açık artırma başlatıldı!", "auction": auction})
 }
 
 func (h *Handler) ListAuctions(c *gin.Context) {
 	auctions, err := h.Repo.GetAllAuctions()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "List error!"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Listeleme hatası!"})
 		return
 	}
+
+	for i, a := range auctions {
+		val, err := h.Redis.Get(context.Background(), "auction:"+a.ID).Result()
+
+		if err == nil {
+			var redisAuction models.Auction
+			if err := json.Unmarshal([]byte(val), &redisAuction); err == nil {
+				auctions[i].CurrentPrice = redisAuction.CurrentPrice
+				auctions[i].WinnerID = redisAuction.WinnerID
+				auctions[i].EndTime = redisAuction.EndTime // Süre uzamış olabilir
+				auctions[i].IsActive = redisAuction.IsActive
+			}
+		}
+	}
+
 	c.JSON(http.StatusOK, auctions)
 }
