@@ -14,7 +14,7 @@ import okhttp3.WebSocketListener
 
 class WebSocketManager {
     private var webSocket : WebSocket? = null
-    private val client = OkHttpClient
+    private val client = OkHttpClient()
     private val gson = Gson()
 
     private val _events = MutableSharedFlow<WebSocketEvent>()
