@@ -13,6 +13,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.auctionarymobile.ui.AuctionDetailScreen
+import com.example.auctionarymobile.ui.AuctionListScreen
 import com.example.auctionarymobile.ui.LoginScreen
 import com.example.auctionarymobile.viewmodel.MainViewModel
 
@@ -38,12 +40,22 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("list") {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("🎉 BAŞARILI! Hoşgeldin.")
-                        }
+                        AuctionListScreen(
+                            viewModel = viewModel,
+                            onAuctionClick = { clickedAuctionId ->
+                                navController.navigate("detail/$clickedAuctionId")
+                            }
+                        )
+                    }
+
+                    composable("detail/{aucitonId}") { backStackEntry ->
+                        val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
+
+                        AuctionDetailScreen(
+                            auctionId = auctionId,
+                            viewModel = viewModel,
+                            onBackClick = {navController.popBackStack()}
+                        )
                     }
                 }
             }
