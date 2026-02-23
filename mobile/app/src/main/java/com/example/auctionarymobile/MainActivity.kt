@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    composable("detail/{aucitonId}") { backStackEntry ->
+                    composable("detail/{auctionId}") { backStackEntry ->
                         val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
 
                         AuctionDetailScreen(

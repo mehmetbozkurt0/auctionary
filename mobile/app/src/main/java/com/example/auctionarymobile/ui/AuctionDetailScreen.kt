@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
+import java.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,11 +32,27 @@ fun AuctionDetailScreen(
 
     val auction = auctions.find{ it.id.toString() == auctionId}
 
-    val timeLeft by remember { mutableStateOf("00:15:30") }
+    var timeLeft by remember { mutableStateOf("Hesaplanıyor...") }
 
     LaunchedEffect(auction) {
         while (true) {
-            delay(1000)
+            if (auction != null) {
+                try {
+                    val endInstant = Instant.parse(auction.endTime)
+                    val nowInstant = Instant.now()
+                    val diffMillis = endInstant.toEpochMilli() - nowInstant.toEpochMilli()
+
+                    if (diffMillis <= 0) {
+                        timeLeft = "BİTTİ"
+                    } else {
+                        timeLeft = String.format("%.1f sn", diffMillis / 1000.0)
+                    }
+                } catch (e: Exception) {
+                    timeLeft = "Hata"
+                }
+            }
+            // WEB MANTIĞI: Akıcı görünüm için 100 milisaniyede bir yenile
+            delay(100)
         }
     }
 

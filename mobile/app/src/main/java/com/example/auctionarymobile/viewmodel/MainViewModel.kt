@@ -14,6 +14,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class MainViewModel: ViewModel() {
     private val webSocketManager = WebSocketManager()
@@ -58,7 +59,7 @@ class MainViewModel: ViewModel() {
     }
 
     private fun connectToSocket() {
-        val wsUrl = "ws://192.168.1.12:8080/ws"
+        val wsUrl = "ws://192.168.1.6:8080/ws"
 
         webSocketManager.connect(wsUrl)
 
@@ -84,13 +85,17 @@ class MainViewModel: ViewModel() {
 
         if (index != -1) {
             val oldItem = currentList[index]
+
+            val newEndTime = Instant.now().plusSeconds(update.remainingSeconds.toLong()).toString()
+
             val newItem = oldItem.copy(
                 currentPrice = update.newPrice,
-                winnerId = update.winnerId
+                winnerId = update.winnerId,
+                endTime = newEndTime
             )
             currentList[index] = newItem
             _auctions.value = currentList
-            Log.d("ViewModel", "Ürün güncellendi: ${newItem.productName} -> ${newItem.currentPrice}")
+            Log.d("ViewModel", "Ürün güncellendi: ${newItem.productName} -> Yeni Süre: $newEndTime")
         }
     }
 

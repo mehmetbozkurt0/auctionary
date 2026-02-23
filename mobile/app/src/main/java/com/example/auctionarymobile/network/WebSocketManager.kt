@@ -17,7 +17,7 @@ class WebSocketManager {
     private val client = OkHttpClient()
     private val gson = Gson()
 
-    private val _events = MutableSharedFlow<WebSocketEvent>()
+    private val _events = MutableSharedFlow<WebSocketEvent>(extraBufferCapacity = 10)
     val events = _events.asSharedFlow()
 
     fun connect(url: String){
@@ -56,12 +56,16 @@ class WebSocketManager {
     }
 
     fun sendMessage(data: Any){
+        if (webSocket == null) {
+            Log.e("Websocket", "🚨 HATA: WebSocket bağlı değil! Veri gönderilemedi.")
+            return
+        }
         try{
             val json = gson.toJson(data)
-            webSocket?.send(json)
-            Log.d("Websocket","Sent: $json")
+            val success = webSocket!!.send(json)
+            Log.d("Websocket","Gönderildi: $json (Başarılı mı: $success)")
         }catch (e: Exception) {
-            Log.e("Websocket","Sending error: ${e.message}")
+            Log.e("Websocket","Gönderme hatası: ${e.message}")
         }
     }
 
