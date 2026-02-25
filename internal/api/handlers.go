@@ -83,6 +83,12 @@ func (h *Handler) CreateAuction(c *gin.Context) {
 	data, _ := json.Marshal(auction)
 	if err := h.Redis.Set(context.Background(), "auction:"+auction.ID, data, 0).Err(); err != nil {}
 
+	event := models.BaseEvent{
+		Type: "auction_events",
+		Payload: auction,
+	}
+	repository.PublishEvent(h.Redis,"auction_events",event)
+
 	c.JSON(http.StatusCreated, gin.H{"message": "Açık artırma başlatıldı!", "auction": auction})
 }
 

@@ -75,6 +75,10 @@ class MainViewModel: ViewModel() {
                         Log.e("ViewModel", "Parse Hatası: ${e.message}")
                     }
                 }
+                else if (event.type == "auction_events" || event.type == "auction_created" || event.type == "auction_end") {
+                    Log.d("Viewmodel", "There is some changes in the system: ${event.type}. List is updating now...")
+                    loadAuctions()
+                }
             }
         }
     }
