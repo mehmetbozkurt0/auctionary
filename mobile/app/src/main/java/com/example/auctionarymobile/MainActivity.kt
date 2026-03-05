@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     viewModel. restoreSession(savedUsername)
                 }
 
-                NavHost(navController = navController, startDestination = "login") {
+                NavHost(navController = navController, startDestination = startDestination) {
                     composable("login") {
                         LoginScreen(
                             viewModel = viewModel,
