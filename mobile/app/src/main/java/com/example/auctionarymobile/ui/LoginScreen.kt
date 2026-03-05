@@ -38,7 +38,7 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F2F5)) // Hafif gri arka plan
+            .background(Color(0xFFF0F2F5))
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -91,11 +91,7 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        if (email.isNotBlank() && password.isNotBlank()) {
-                            viewModel.login(email, password)
-                        } else {
-                            errorMessage = "Lütfen alanları doldurun!"
-                        }
+                        viewModel.login(email, password)
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),

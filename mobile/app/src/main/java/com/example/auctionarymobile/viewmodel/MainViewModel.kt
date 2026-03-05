@@ -7,6 +7,7 @@ import com.example.auctionarymobile.model.Auction
 import com.example.auctionarymobile.model.BidData
 import com.example.auctionarymobile.model.BidPayload
 import com.example.auctionarymobile.model.BidUpdate
+import com.example.auctionarymobile.model.CreateAuctionRequest
 import com.example.auctionarymobile.model.LoginRequest
 import com.example.auctionarymobile.network.RetrofitClient
 import com.example.auctionarymobile.network.WebSocketManager
@@ -34,8 +35,9 @@ class MainViewModel: ViewModel() {
                 Log.d("ViewModel", "Giriş deneniyor: $email")
                 val response = RetrofitClient.api.login(LoginRequest(email, pass))
 
-                _userToken.value = response.token
                 currentUsername = response.username
+                com.example.auctionarymobile.network.AuthManager.saveUser(response.username, response.token)
+                _userToken.value = response.token
                 Log.d("ViewModel", "Giriş Başarılı: ${response.username}")
 
                 loadAuctions()
@@ -44,6 +46,12 @@ class MainViewModel: ViewModel() {
                 Log.e("Login", "Hata: ${e.message}")
             }
         }
+    }
+
+    fun restoreSession(savedUsername: String) {
+        currentUsername = savedUsername
+        loadAuctions()
+        connectToSocket()
     }
 
     fun loadAuctions() {
@@ -58,8 +66,8 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    private fun connectToSocket() {
-        val wsUrl = "ws://192.168.1.6:8080/ws"
+    fun connectToSocket() {
+        val wsUrl = "ws://10.68.6.136:8080/ws"
 
         webSocketManager.connect(wsUrl)
 
@@ -112,5 +120,18 @@ class MainViewModel: ViewModel() {
             )
         )
         webSocketManager.sendMessage(payload)
+    }
+
+    fun createAuction(name: String, startingPrice: Double){
+        viewModelScope.launch {
+            try {
+                val generatedId = "item" + (10000..99999).random()
+                val request = CreateAuctionRequest(productName = name, startingPrice = startingPrice, id = generatedId)
+                RetrofitClient.api.createAuction(request)
+                Log.d("ViewModel", "Product added successfully: $name")
+            } catch (e: Exception) {
+                Log.e("ViewModel", "Cannot add this product: ${e.message}")
+            }
+        }
     }
 }

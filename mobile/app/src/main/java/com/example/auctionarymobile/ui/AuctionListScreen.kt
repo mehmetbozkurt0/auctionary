@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +22,11 @@ import com.example.auctionarymobile.model.Auction
 import com.example.auctionarymobile.ui.theme.PrimaryBlue
 import com.example.auctionarymobile.ui.theme.SecondaryOrange
 import com.example.auctionarymobile.viewmodel.MainViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +35,7 @@ fun AuctionListScreen(
     onAuctionClick: (String) -> Unit
 ) {
     val auctions by viewModel.auctions.collectAsState()
+    var showCreateDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -35,6 +43,15 @@ fun AuctionListScreen(
                 title = { Text("Müzayede Listesi", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryBlue)
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                containerColor = SecondaryOrange,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Yeni Ürün Ekle")
+            }
         }
     ) { paddingValues ->
         Column(
@@ -65,6 +82,51 @@ fun AuctionListScreen(
                 }
             }
         }
+    }
+    if (showCreateDialog) {
+        var productName by remember { mutableStateOf("") }
+        var productPrice by remember { mutableStateOf("") }
+
+        AlertDialog(
+            onDismissRequest = { showCreateDialog = false },
+            title = { Text("Yeni Müzayede Başlat") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = productName,
+                        onValueChange = { productName = it },
+                        label = { Text("Ürün Adı") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = productPrice,
+                        onValueChange = { productPrice = it },
+                        label = { Text("Başlangıç Fiyatı (₺)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val price = productPrice.toDoubleOrNull()
+                        if (productName.isNotBlank() && price != null) {
+                            viewModel.createAuction(productName, price)
+                            showCreateDialog = false
+                        }
+                    }
+                ) {
+                    Text("Başlat")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateDialog = false }) {
+                    Text("İptal")
+                }
+            }
+        )
     }
 }
 

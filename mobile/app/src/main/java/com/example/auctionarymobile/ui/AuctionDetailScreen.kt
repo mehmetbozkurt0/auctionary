@@ -1,8 +1,9 @@
 package com.example.auctionarymobile.ui
 
-import androidx.compose.foundation.background
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -16,6 +17,9 @@ import androidx.compose.ui.unit.sp
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import java.time.Instant
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.auctionarymobile.ui.theme.PrimaryBlue
+import com.example.auctionarymobile.ui.theme.SecondaryOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +38,8 @@ fun AuctionDetailScreen(
 
     var timeLeft by remember { mutableStateOf("Hesaplanıyor...") }
 
+    var customBidAmount by remember(auction?.currentPrice) {mutableStateOf((auction?.currentPrice?.plus(10) ?:0.0).toString())}
+
     LaunchedEffect(auction) {
         while (true) {
             if (auction != null) {
@@ -51,7 +57,6 @@ fun AuctionDetailScreen(
                     timeLeft = "Hata"
                 }
             }
-            // WEB MANTIĞI: Akıcı görünüm için 100 milisaniyede bir yenile
             delay(100)
         }
     }
@@ -136,32 +141,61 @@ fun AuctionDetailScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // TEKLİF BUTONLARI
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // +50 TL Arttır
-                    Button(
-                        onClick = { viewModel.placeBid(auction.id, auction.currentPrice + 50) },
-                        modifier = Modifier.weight(1f).height(60.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)) // Turuncu
-                    ) {
-                        Text("+50 ₺", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    }
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ){
+                        OutlinedTextField(
+                            value = customBidAmount,
+                            onValueChange = {customBidAmount = it},
+                            label = { Text("Teklif (₺)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
 
-                    // +100 TL Arttır
-                    Button(
-                        onClick = { viewModel.placeBid(auction.id, auction.currentPrice + 100) },
-                        modifier = Modifier.weight(1f).height(60.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        Button(
+                            onClick = {
+                                val bidVal = customBidAmount.toDoubleOrNull()
+                                if (bidVal != null && bidVal > auction.currentPrice) {
+                                    viewModel.placeBid(auction.id, bidVal)
+                                }
+                            },
+                            modifier = Modifier.height(56.dp).padding(top = 6.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                        ) {
+                            Text("Teklif Ver", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("+100 ₺", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Button(
+                            onClick = {viewModel.placeBid(auction.id, auction.currentPrice +50)},
+                            modifier = Modifier.weight(1f).height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = SecondaryOrange)
+                        ) {
+                            Text("+50", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = { viewModel.placeBid(auction.id, auction.currentPrice + 100) },
+                            modifier = Modifier.weight(1f).height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                        ) {
+                            Text("+100 ₺", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

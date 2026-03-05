@@ -71,6 +71,15 @@ data class BidUpdate(
     val remainingSeconds: Int
 )
 
+data class CreateAuctionRequest (
+    val id: String,
+    @SerializedName("product_name")
+    val productName: String,
+
+    @SerializedName("starting_price")
+    val startingPrice: Double
+)
+
 
 
 
