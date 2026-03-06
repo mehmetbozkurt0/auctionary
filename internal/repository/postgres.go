@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	_"github.com/lib/pq"
+	_ "github.com/lib/pq"
 	"github.com/mehmetbozkurt0/auctionary/internal/models"
 )
 
@@ -31,33 +31,37 @@ func NewPostgresDB() (*PostgresDB, error) {
 
 func (p *PostgresDB) InitTables() {
 	userQuery := `
-		CREATE TABLE IF NOT EXISTS users (
-		    id SERIAL PRIMARY KEY,
-		    username VARCHAR(50) UNIQUE NOT NULL,
-		    email VARCHAR(100) UNIQUE NOT NULL,
-		    password VARCHAR(255) NOT NULL,
-		    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);
-	`
+       CREATE TABLE IF NOT EXISTS users (
+           id SERIAL PRIMARY KEY,
+           username VARCHAR(50) UNIQUE NOT NULL,
+           email VARCHAR(100) UNIQUE NOT NULL,
+           password VARCHAR(255) NOT NULL,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+       );
+    `
 	if _, err := p.DB.Exec(userQuery); err != nil {
-		log.Fatalf("User table create error: %v",err)
+		log.Fatalf("User table create error: %v", err)
 	}
 
 	auctionQuery := `
-		CREATE TABLE IF NOT EXISTS auctions (
-		    id VARCHAR(50) PRIMARY KEY,
-		    product_name VARCHAR(100),
-		    starting_price DECIMAL(10,2),
-		    final_price DECIMAL(10,2),
-		    winner_id VARCHAR(50),
-		    end_time TIMESTAMP,
-		    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);  
-	`
+       CREATE TABLE IF NOT EXISTS auctions (
+           id VARCHAR(50) PRIMARY KEY,
+           product_name VARCHAR(100),
+           description TEXT,
+           category VARCHAR(50),
+           image_url TEXT,
+           starting_price DECIMAL(10,2),
+           current_price DECIMAL(10,2),
+           status VARCHAR(20),
+           winner_id VARCHAR(50),
+           end_time TIMESTAMP,
+           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+       );  
+    `
 
 	_, err := p.DB.Exec(auctionQuery)
 	if err != nil {
-		log.Fatalf("Auction table create error: %v",err)
+		log.Fatalf("Auction table create error: %v", err)
 	}
 	log.Println("Database tables ready++")
 }
@@ -81,27 +85,35 @@ func (p *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 
 func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 	query := `
-		INSERT INTO auctions (id, product_name, starting_price, final_price, winner_id, end_time)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (id) DO UPDATE 
-		SET final_price = EXCLUDED.final_price, winner_id = EXCLUDED.winner_id, end_time = EXCLUDED.end_time;
-	`
+       INSERT INTO auctions (id, product_name, starting_price, current_price, winner_id, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (id) DO UPDATE 
+       SET current_price = EXCLUDED.current_price, winner_id = EXCLUDED.winner_id, end_time = EXCLUDED.end_time;
+    `
 	_, err := p.DB.Exec(query, auction.ID, auction.ProductName, auction.StartingPrice, auction.CurrentPrice, auction.WinnerID, auction.EndTime)
 	return err
 }
 
-
 func (p *PostgresDB) CreateNewAuction(auction *models.Auction) error {
 	query := `
-		INSERT INTO auctions (id, product_name, starting_price, final_price, winner_id, end_time)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	_, err := p.DB.Exec(query, auction.ID, auction.ProductName, auction.StartingPrice, auction.StartingPrice, "", auction.EndTime)
+       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, status, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `
+	_, err := p.DB.Exec(query,
+		auction.ID,
+		auction.ProductName,
+		auction.Description,
+		auction.Category,
+		auction.ImageURL,
+		auction.StartingPrice,
+		auction.CurrentPrice,
+		auction.Status,
+		auction.EndTime)
 	return err
 }
 
 func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
-	query := `SELECT id, product_name, starting_price, final_price, winner_id, end_time FROM auctions ORDER BY end_time DESC`
+	query := `SELECT id, product_name, description, category, image_url, starting_price, current_price, status, end_time, winner_id FROM auctions`
 
 	rows, err := p.DB.Query(query)
 	if err != nil {
@@ -114,12 +126,27 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 		var a models.Auction
 		var winnerID sql.NullString
 
-		if err := rows.Scan(&a.ID, &a.ProductName, &a.StartingPrice, &a.CurrentPrice, &winnerID, &a.EndTime); err != nil {
+		if err := rows.Scan(
+			&a.ID,
+			&a.ProductName,
+			&a.Description,
+			&a.Category,
+			&a.ImageURL,
+			&a.StartingPrice,
+			&a.CurrentPrice,
+			&a.Status,
+			&a.EndTime,
+			&winnerID,
+		); err != nil {
+			log.Printf("Satır okuma hatası: %v", err)
 			return nil, err
 		}
-		a.WinnerID = winnerID.String
 
-		if time.Now().Before(a.EndTime) {
+		if winnerID.Valid {
+			a.WinnerID = winnerID.String
+		}
+
+		if time.Now().Before(a.EndTime) && a.Status == "active" {
 			a.IsActive = true
 		} else {
 			a.IsActive = false
@@ -129,15 +156,3 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 	}
 	return auctions, nil
 }
-
-
-
-
-
-
-
-
-
-
-
-

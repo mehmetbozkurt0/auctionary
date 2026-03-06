@@ -32,12 +32,11 @@ import java.time.Instant
 @Composable
 fun AuctionListScreen(
     viewModel: MainViewModel,
-    onAuctionClick: (String) -> Unit
+    onAuctionClick: (String) -> Unit,
+    onCreateClick: () -> Unit
 ) {
     val auctions by viewModel.auctions.collectAsState()
-    var showCreateDialog by remember { mutableStateOf(false) }
 
-    // Sadece ikiye ayırıyoruz: Aktifler ve Bitmişler
     val activeAuctions = auctions.filter { it.isActive }
     val pastAuctions = auctions.filter { !it.isActive }
 
@@ -45,7 +44,7 @@ fun AuctionListScreen(
         containerColor = LightBackground,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showCreateDialog = true },
+                onClick = onCreateClick,
                 containerColor = DarkSurface,
                 contentColor = PrimaryGold,
                 shape = CircleShape
@@ -79,7 +78,7 @@ fun AuctionListScreen(
                         shadowElevation = 2.dp,
                         modifier = Modifier.size(40.dp)
                     ) {
-                        IconButton(onClick = { /* Bildirimler */ }) {
+                        IconButton(onClick = {  }) {
                             Text("🔔", fontSize = 18.sp)
                         }
                     }
@@ -87,7 +86,6 @@ fun AuctionListScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- SEARCH BAR ---
             item {
                 OutlinedTextField(
                     value = "",
@@ -111,7 +109,6 @@ fun AuctionListScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // --- CATEGORIES ---
             item {
                 val categories = listOf("All", "Watches", "Vehicles", "Art", "Jewelry")
                 LazyRow(
@@ -124,7 +121,7 @@ fun AuctionListScreen(
                             shape = RoundedCornerShape(20.dp),
                             color = if (isSelected) PrimaryGold else Color.White,
                             border = if (!isSelected) BorderStroke(1.dp, DividerColor) else null,
-                            modifier = Modifier.clickable { /* Kategori Filtreleme */ }
+                            modifier = Modifier.clickable {  }
                         ) {
                             Text(
                                 text = category,
@@ -146,7 +143,6 @@ fun AuctionListScreen(
                     }
                 }
             } else {
-                // --- FEATURED LIVE SECTION (Yatay Kaydırılabilir) ---
                 if (activeAuctions.isNotEmpty()) {
                     item {
                         Row(
@@ -161,7 +157,6 @@ fun AuctionListScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Aktif müzayedeleri yan yana dizen LazyRow
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(horizontal = 16.dp)
@@ -170,7 +165,7 @@ fun AuctionListScreen(
                                 FeaturedLiveCard(
                                     auction = auction,
                                     onClick = { onAuctionClick(it) },
-                                    modifier = Modifier.width(320.dp) // Kartın genişliğini sabitledik ki bir sonraki hafifçe görünsün
+                                    modifier = Modifier.width(320.dp)
                                 )
                             }
                         }
@@ -178,7 +173,6 @@ fun AuctionListScreen(
                     }
                 }
 
-                // --- PAST AUCTIONS SECTION (Dikey Liste) ---
                 if (pastAuctions.isNotEmpty()) {
                     item {
                         Text(
@@ -203,60 +197,8 @@ fun AuctionListScreen(
             }
         }
     }
-
-    // --- CREATE AUCTION DIALOG ---
-    if (showCreateDialog) {
-        var productName by remember { mutableStateOf("") }
-        var productPrice by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
-            containerColor = Color.White,
-            title = { Text("Yeni Müzayede Başlat", fontWeight = FontWeight.Bold, color = LightTextPrimary) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = productName,
-                        onValueChange = { productName = it },
-                        label = { Text("Ürün Adı") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryGold)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = productPrice,
-                        onValueChange = { productPrice = it },
-                        label = { Text("Başlangıç Fiyatı (₺)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryGold)
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val price = productPrice.toDoubleOrNull()
-                        if (productName.isNotBlank() && price != null) {
-                            viewModel.createAuction(productName, price)
-                            showCreateDialog = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGold)
-                ) {
-                    Text("Başlat", color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) {
-                    Text("İptal", color = LightTextSecondary)
-                }
-            }
-        )
-    }
 }
 
-// Parametrelere modifier eklendi
 @Composable
 fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (String) -> Unit) {
     var timeLeft by remember { mutableStateOf("...") }
@@ -337,7 +279,6 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
     }
 }
 
-// Parametrelere modifier eklendi
 @Composable
 fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (String) -> Unit) {
     Card(

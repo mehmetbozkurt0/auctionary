@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.auctionarymobile.network.AuthManager
 import com.example.auctionarymobile.ui.AuctionDetailScreen
 import com.example.auctionarymobile.ui.AuctionListScreen
+import com.example.auctionarymobile.ui.CreateAuctionScreen
 import com.example.auctionarymobile.ui.LoginScreen
 import com.example.auctionarymobile.viewmodel.MainViewModel
 
@@ -49,7 +50,18 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onAuctionClick = { clickedAuctionId ->
                                 navController.navigate("detail/$clickedAuctionId")
+                            },
+                            onCreateClick = {
+                                navController.navigate("create")
                             }
+                        )
+                    }
+
+                    composable("create") {
+                        CreateAuctionScreen(
+                            viewModel = viewModel,
+                            onBackClick = { navController.popBackStack() },
+                            onSuccess = { navController.popBackStack() }
                         )
                     }
 
