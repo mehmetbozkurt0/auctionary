@@ -14,15 +14,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.auctionarymobile.ui.theme.PrimaryBlue
+import com.example.auctionarymobile.ui.theme.*
 import com.example.auctionarymobile.viewmodel.MainViewModel
-
 
 @Composable
 fun LoginScreen(
     viewModel: MainViewModel,
-    onLoginSuccess: () ->   Unit
-){
+    onLoginSuccess: () -> Unit
+) {
+    // Geliştirme kolaylığı için default değerleri bıraktım
     var email by remember { mutableStateOf("mehmet@test.com") }
     var password by remember { mutableStateOf("123") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -30,104 +30,109 @@ fun LoginScreen(
     val token by viewModel.userToken.collectAsState()
 
     LaunchedEffect(token) {
-        if (token != null){
+        if (token != null) {
             onLoginSuccess()
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF0F2F5))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // BAŞLIK
-        Text(
-            text = "⚡ Auctionary",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = PrimaryBlue
-        )
-        Text(
-            text = "Mobil Giriş",
-            fontSize = 18.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth()
+    Scaffold(
+        containerColor = LightBackground // Tasarımdaki açık gri arka plan
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // BAŞLIK ALANI (Serif font uyumu ile)
+            Text(
+                text = "Auctionary",
+                style = MaterialTheme.typography.headlineLarge,
+                color = LightTextPrimary,
+                fontSize = 40.sp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Lüks müzayedelere hoş geldiniz",
+                fontSize = 14.sp,
+                color = LightTextSecondary,
+                modifier = Modifier.padding(bottom = 40.dp)
+            )
+
+            // GİRİŞ FORMU KARTI
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email Adresi") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Şifre") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        viewModel.login(email, password)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(10.dp)
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("GİRİŞ YAP 🚀", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
+                    // EMAİL ALANI
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email Adresi", color = LightTextSecondary) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryGold,
+                            unfocusedBorderColor = DividerColor,
+                            focusedTextColor = LightTextPrimary,
+                            unfocusedTextColor = LightTextPrimary,
+                            cursorColor = PrimaryGold
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = errorMessage!!, color = Color.Red)
+
+                    // ŞİFRE ALANI
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Şifre", color = LightTextSecondary) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryGold,
+                            unfocusedBorderColor = DividerColor,
+                            focusedTextColor = LightTextPrimary,
+                            unfocusedTextColor = LightTextPrimary,
+                            cursorColor = PrimaryGold
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // GİRİŞ BUTONU
+                    Button(
+                        onClick = {
+                            viewModel.login(email, password)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp), // Premium dokunma alanı genişliği
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurface), // Koyu ve şık buton
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Giriş Yap", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (errorMessage != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(text = errorMessage!!, color = StatusError, fontSize = 14.sp)
+                    }
                 }
             }
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

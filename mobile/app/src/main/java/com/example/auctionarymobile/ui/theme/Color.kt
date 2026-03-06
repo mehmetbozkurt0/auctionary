@@ -2,17 +2,25 @@ package com.example.auctionarymobile.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Koyu Tema Arka Plan Renkleri
-val DarkBackground = Color(0xFF121212) // Derin siyah/gri
-val DarkSurface = Color(0xFF1E1E1E)    // Kartlar için hafif açık koyu gri
-val DarkSurfaceVariant = Color(0xFF2A2A2A) // Input alanları ve ayırıcılar için
+// Ana Marka (Brand) Renkleri
+val PrimaryGold = Color(0xFFF5A623) // Butonlardaki sarı/turuncu tonu
+val PrimaryGoldDark = Color(0xFFD48806)
 
-// Metin Renkleri
-val TextWhite = Color(0xFFEEEEEE)
-val TextGray = Color(0xFFAAAAAA)
+// Açık Tema (Light Theme) Renkleri
+val LightBackground = Color(0xFFF5F6F8) // Ana sayfa arka planı
+val LightSurface = Color(0xFFFFFFFF)    // Kartların arka planı
+val LightTextPrimary = Color(0xFF1A1A1A)
+val LightTextSecondary = Color(0xFF6B7280)
 
-// Vurgu (Accent) Renkleri - Dark temada patlayacak renkler
-val AccentGold = Color(0xFFFFC107)    // Fiyatlar ve önemli detaylar için altın sarısı
-val AccentOrange = Color(0xFFFF5722)  // "Teklif Ver" butonu veya acil durumlar için turuncu
-val PrimaryNeonBlue = Color(0xFF00E5FF) // İkonlar ve küçük detaylar için elektrik mavisi
-val DangerRed = Color(0xFFCF6679)     // Hatalar veya çıkış yap için yumuşak kırmızı
+// Koyu Tema (Dark Theme) Renkleri
+val DarkBackground = Color(0xFF121212)  // Detay sayfası arka planı
+val DarkSurface = Color(0xFF1E1E1E)     // Koyu kartların arka planı
+val DarkTextPrimary = Color(0xFFFFFFFF)
+val DarkTextSecondary = Color(0xFFA0A0A0)
+
+// Durum (Status) ve Badge Renkleri
+val StatusSuccess = Color(0xFF10B981)   // Winning (Kazanan) yazısı ve onay tiki
+val StatusSuccessBg = Color(0xFFD1FAE5) // Winning badge açık yeşil arka planı
+val StatusError = Color(0xFFEF4444)     // Outbid (Geçilen), Canlı (Live) kırmızı nokta
+val StatusErrorBg = Color(0xFFFEE2E2)   // Outbid badge açık kırmızı arka planı
+val DividerColor = Color(0xFFE5E7EB)    // Çizgiler ve ayırıcılar
