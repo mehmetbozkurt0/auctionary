@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -27,6 +26,18 @@ import com.example.auctionarymobile.viewmodel.MainViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.TopAppBarDefaults
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import com.example.auctionarymobile.model.toImageBitmap
+import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,11 +46,30 @@ fun CreateAuctionScreen(
     onBackClick: () -> Unit,
     onSuccess: () -> Unit
 ){
+    val context = LocalContext.current
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Watches") }
     val categories = listOf("Watches","Vehicles","Jewelery","Art","Other")
+    var imageUri by remember {mutableStateOf<Uri?>(null)}
+    var base64Image by remember { mutableStateOf("") }
+
+    var launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        imageUri = uri
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+                val bytes = outputStream.toByteArray()
+                base64Image = Base64.encodeToString(bytes, Base64.DEFAULT)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     Scaffold(
         containerColor = LightBackground,
@@ -64,7 +94,7 @@ fun CreateAuctionScreen(
                     onClick = {
                         val priceVal = price.toDoubleOrNull()
                         if (title.isNotBlank() && priceVal != null) {
-                            viewModel.createAuction(title,priceVal)
+                            viewModel.createAuction(title, description, selectedCategory, base64Image, priceVal)
                             onSuccess()
                         }
                     },
@@ -88,13 +118,23 @@ fun CreateAuctionScreen(
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.White)
                     .border(2.dp, DividerColor, RoundedCornerShape(16.dp))
-                    .clickable { /* TODO: Galeriden resim seçme işlemi eklenecek */ },
+                    .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Photo", tint = PrimaryGold, modifier = Modifier.size(48.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Upload Product Photo", color = LightTextSecondary, fontWeight = FontWeight.Medium)
+                val bitmap = base64Image.toImageBitmap()
+                if (bitmap != null){
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = "Choosen Product",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Photo", tint = PrimaryGold, modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Upload Product Photo", color = LightTextSecondary, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
 

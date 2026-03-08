@@ -85,12 +85,22 @@ func (p *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 
 func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 	query := `
-       INSERT INTO auctions (id, product_name, starting_price, current_price, winner_id, end_time)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, winner_id, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (id) DO UPDATE 
        SET current_price = EXCLUDED.current_price, winner_id = EXCLUDED.winner_id, end_time = EXCLUDED.end_time;
     `
-	_, err := p.DB.Exec(query, auction.ID, auction.ProductName, auction.StartingPrice, auction.CurrentPrice, auction.WinnerID, auction.EndTime)
+	_, err := p.DB.Exec(query,
+		auction.ID,
+		auction.ProductName,
+		auction.Description,
+		auction.Category,
+		auction.ImageURL,
+		auction.StartingPrice,
+		auction.CurrentPrice,
+		auction.WinnerID,
+		auction.EndTime,
+	)
 	return err
 }
 

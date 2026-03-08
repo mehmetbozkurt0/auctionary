@@ -67,7 +67,7 @@ class MainViewModel: ViewModel() {
     }
 
     fun connectToSocket() {
-        val wsUrl = "ws://10.68.6.136:8080/ws"
+        val wsUrl = "ws://192.168.1.10:8080/ws"
 
         webSocketManager.connect(wsUrl)
 
@@ -122,13 +122,21 @@ class MainViewModel: ViewModel() {
         webSocketManager.sendMessage(payload)
     }
 
-    fun createAuction(name: String, startingPrice: Double){
+    fun createAuction(name: String, description:String, category: String, imageUrl:String , startingPrice: Double){
         viewModelScope.launch {
             try {
                 val generatedId = "item" + (10000..99999).random()
-                val request = CreateAuctionRequest(productName = name, startingPrice = startingPrice, id = generatedId)
+                val request = CreateAuctionRequest(
+                    id = generatedId,
+                    productName = name,
+                    description = description,
+                    category = category,
+                    imageUrl = imageUrl,
+                    startingPrice = startingPrice
+                )
                 RetrofitClient.api.createAuction(request)
                 Log.d("ViewModel", "Product added successfully: $name")
+                loadAuctions()
             } catch (e: Exception) {
                 Log.e("ViewModel", "Cannot add this product: ${e.message}")
             }

@@ -1,4 +1,8 @@
 package com.example.auctionarymobile.model
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import com.google.gson.annotations.SerializedName
 import java.time.temporal.TemporalAmount
 
@@ -76,9 +80,26 @@ data class CreateAuctionRequest (
     @SerializedName("product_name")
     val productName: String,
 
+    val description: String,
+
+    val category: String,
+
+    @SerializedName("image_url")
+    val imageUrl: String,
+
     @SerializedName("starting_price")
     val startingPrice: Double
 )
+
+fun String.toImageBitmap(): ImageBitmap? {
+    if(this.isBlank()) return null
+    return try {
+        val bytes = Base64.decode(this, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size).asImageBitmap()
+    }catch (e: Exception) {
+        null
+    }
+}
 
 
 

@@ -147,27 +147,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func seedRedisData() {
-	auctionID := "item101"
-
-	auction := models.Auction{
-		ID: auctionID,
-		ProductName: "Antique Clock",
-		StartingPrice: 100.0,
-		CurrentPrice: 100.0,
-		IsActive: true,
-		EndTime: time.Now().Add(30 * time.Second),
-	}
-
-	data, _ := json.Marshal(auction)
-
-	err :=rdb.Set(repository.Ctx, "auction:"+auctionID, data, 0).Err()
-	if err != nil {
-		log.Fatal("Seed error: ",err)
-	}
-
-	fmt.Println("Test data uploaded to Redis!")
-}
 
 func main() {
 	rdb = repository.NewRedisClient()
@@ -179,7 +158,6 @@ func main() {
 	pgDB.InitTables()
 
 	biddingService = service.NewBiddingService(rdb)
-	seedRedisData()
 
 	go subscribeToAuctionEvents()
 	go checkAuctions()
