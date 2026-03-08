@@ -1,6 +1,7 @@
 package com.example.auctionarymobile.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,20 +10,21 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.auctionarymobile.model.Auction
+import com.example.auctionarymobile.model.toImageBitmap
 import com.example.auctionarymobile.ui.theme.*
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -32,6 +34,7 @@ import java.time.Instant
 @Composable
 fun AuctionListScreen(
     viewModel: MainViewModel,
+    onMenuClick: () -> Unit,
     onAuctionClick: (String) -> Unit,
     onCreateClick: () -> Unit
 ) {
@@ -68,10 +71,30 @@ fun AuctionListScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(text = "WELCOME BACK", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text(text = "Discover", style = MaterialTheme.typography.headlineLarge, color = LightTextPrimary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            IconButton(onClick = onMenuClick) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Menüyü Aç",
+                                    tint = LightTextPrimary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column {
+                            Text(text = "WELCOME BACK", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(text = "Discover", style = MaterialTheme.typography.headlineLarge, color = LightTextPrimary)
+                        }
                     }
+
                     Surface(
                         shape = CircleShape,
                         color = Color.White,
@@ -237,6 +260,15 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
                     .background(DarkBackground),
                 contentAlignment = Alignment.BottomStart
             ) {
+                val imageBitmap = auction.imageUrl.toImageBitmap()
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap,
+                        contentDescription = auction.productName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Surface(
                     color = Color.Black.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp),
@@ -300,6 +332,15 @@ fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (S
                     .background(Color.DarkGray),
                 contentAlignment = Alignment.BottomCenter
             ) {
+                val imageBitmap = auction.imageUrl.toImageBitmap()
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap,
+                        contentDescription = auction.productName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Surface(
                     color = StatusErrorBg,
                     modifier = Modifier.fillMaxWidth()

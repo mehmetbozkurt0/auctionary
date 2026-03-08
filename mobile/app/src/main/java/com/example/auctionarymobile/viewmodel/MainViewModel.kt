@@ -54,6 +54,17 @@ class MainViewModel: ViewModel() {
         connectToSocket()
     }
 
+    fun logout() {
+        com.example.auctionarymobile.network.AuthManager.clearUser()
+
+        _userToken.value = null
+        currentUsername = ""
+
+        webSocketManager.disconnect()
+
+        Log.d("ViewModel", "Kullanıcı çıkış yaptı ve oturum temizlendi.")
+    }
+
     fun loadAuctions() {
         viewModelScope.launch {
             try {

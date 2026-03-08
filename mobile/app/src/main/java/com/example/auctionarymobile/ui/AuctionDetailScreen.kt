@@ -1,5 +1,6 @@
 package com.example.auctionarymobile.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.auctionarymobile.model.toImageBitmap
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import com.example.auctionarymobile.ui.theme.*
 import kotlinx.coroutines.delay
@@ -165,6 +168,15 @@ fun AuctionDetailScreen(
                         .background(Color.Black),
                     contentAlignment = Alignment.TopEnd
                 ) {
+                    val imageBitmap = auction.imageUrl.toImageBitmap()
+                    if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Ürün Detay Resmi",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     // Zamanlayıcı Badge (Figma'daki gibi)
                     Surface(
                         color = Color.Black.copy(alpha = 0.6f),

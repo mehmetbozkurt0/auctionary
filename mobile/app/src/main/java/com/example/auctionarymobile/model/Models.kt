@@ -12,6 +12,13 @@ data class Auction(
     @SerializedName("product_name")
     val productName: String,
 
+    val description: String = "",
+
+    val category: String = "Other",
+
+    @SerializedName("image_url")
+    val imageUrl: String = "",
+
     @SerializedName("current_price")
     val currentPrice: Double,
 
