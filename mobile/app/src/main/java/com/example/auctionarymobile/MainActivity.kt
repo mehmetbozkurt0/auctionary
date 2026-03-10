@@ -21,6 +21,8 @@ import com.example.auctionarymobile.ui.AuctionDetailScreen
 import com.example.auctionarymobile.ui.AuctionListScreen
 import com.example.auctionarymobile.ui.CreateAuctionScreen
 import com.example.auctionarymobile.ui.LoginScreen
+import com.example.auctionarymobile.ui.ProfileScreen
+import com.example.auctionarymobile.ui.PurchasedItemsScreen
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -52,11 +54,8 @@ class MainActivity : ComponentActivity() {
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
-                    // Güvenlik Kilidi: Sadece "login" ekranında değilsek kaydırmaya izin ver
                     gesturesEnabled = currentRoute != "login",
                     drawerContent = {
-                        // DİKKAT: Buradaki if(currentRoute != login) şartını kaldırdık!
-                        // Menü hep var olacak ama kapalı duracak. Bu sayede "yoktan var olma" yansıması (flash) bitti.
                         AppDrawerContent(
                             username = viewModel.currentUsername.ifEmpty { AuthManager.getUsername() ?: "" },
                             onNavigate = { route ->
@@ -65,10 +64,8 @@ class MainActivity : ComponentActivity() {
                             },
                             onLogoutClick = {
                                 scope.launch {
-                                    // 1. Önce menünün o şık animasyonla tamamen kapanmasını BEKLE
                                     drawerState.close()
 
-                                    // 2. Kapanma bitince verileri temizle ve login ekranına fırlat
                                     viewModel.logout()
                                     navController.navigate("login") {
                                         popUpTo(0)
@@ -102,6 +99,20 @@ class MainActivity : ComponentActivity() {
                                 onCreateClick = {
                                     navController.navigate("create")
                                 }
+                            )
+                        }
+
+                        composable("profile") {
+                            ProfileScreen(
+                                viewModel = viewModel,
+                                onBackClick = {navController.popBackStack()}
+                            )
+                        }
+
+                        composable("purchased_items") {
+                            PurchasedItemsScreen(
+                                viewModel = viewModel,
+                                onBackClick = {navController.popBackStack()}
                             )
                         }
 

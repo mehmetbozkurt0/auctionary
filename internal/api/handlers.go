@@ -13,7 +13,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var jwtKey = []byte("cok_gizli_anahtar_123")
+var jwtKey = []byte("mehmetbozkurt170904")
 
 type Handler struct {
 	Repo  *repository.PostgresDB
