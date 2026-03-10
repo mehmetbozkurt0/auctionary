@@ -21,8 +21,10 @@ import com.example.auctionarymobile.ui.AuctionDetailScreen
 import com.example.auctionarymobile.ui.AuctionListScreen
 import com.example.auctionarymobile.ui.CreateAuctionScreen
 import com.example.auctionarymobile.ui.LoginScreen
+import com.example.auctionarymobile.ui.MyAuctionsScreen
 import com.example.auctionarymobile.ui.ProfileScreen
 import com.example.auctionarymobile.ui.PurchasedItemsScreen
+import com.example.auctionarymobile.ui.RegisterScreen
 import com.example.auctionarymobile.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -35,7 +37,6 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val viewModel: MainViewModel = viewModel()
 
-                // Başlangıç değeri her zaman net bir şekilde Kapalı (Closed)
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
 
@@ -58,8 +59,16 @@ class MainActivity : ComponentActivity() {
                     drawerContent = {
                         AppDrawerContent(
                             username = viewModel.currentUsername.ifEmpty { AuthManager.getUsername() ?: "" },
+                            currentRoute = currentRoute ?: "list",
                             onNavigate = { route ->
                                 scope.launch { drawerState.close() }
+                                if (currentRoute != route) {
+                                    navController.navigate(route) {
+                                        if (route == "list") {
+                                            popUpTo("list") {inclusive = true}
+                                        }
+                                    }
+                                }
                                 navController.navigate(route)
                             },
                             onLogoutClick = {
@@ -83,6 +92,21 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("list") {
                                         popUpTo("login") { inclusive = true }
                                     }
+                                },
+                                onNavigateToRegister = {
+                                    navController.navigate("register")
+                                }
+                            )
+                        }
+
+                        composable("register") {
+                            RegisterScreen(
+                                viewModel = viewModel,
+                                onNavigateToLogin = {
+                                    navController.popBackStack()
+                                },
+                                onRegisterSuccess = {
+                                    navController.navigate("login")
                                 }
                             )
                         }
@@ -105,14 +129,32 @@ class MainActivity : ComponentActivity() {
                         composable("profile") {
                             ProfileScreen(
                                 viewModel = viewModel,
-                                onBackClick = {navController.popBackStack()}
+                                onBackClick = {navController.navigate("list") {
+                                    popUpTo("list") {inclusive = true}
+                                } }
                             )
                         }
 
                         composable("purchased_items") {
                             PurchasedItemsScreen(
                                 viewModel = viewModel,
-                                onBackClick = {navController.popBackStack()}
+                                onBackClick = {navController.navigate("list"){
+                                    popUpTo("list") {inclusive = true}
+                                } }
+                            )
+                        }
+
+                        composable("my_auctions") {
+                            MyAuctionsScreen(
+                                viewModel = viewModel,
+                                onBackClick = {
+                                    navController.navigate("list") {
+                                        popUpTo("list") { inclusive = true }
+                                    }
+                                },
+                                onCreateClick = {
+                                    navController.navigate("create")
+                                }
                             )
                         }
 

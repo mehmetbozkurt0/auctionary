@@ -1,6 +1,7 @@
 package com.example.auctionarymobile.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -20,9 +22,9 @@ import com.example.auctionarymobile.viewmodel.MainViewModel
 @Composable
 fun LoginScreen(
     viewModel: MainViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
-    // Geliştirme kolaylığı için default değerleri bıraktım
     var email by remember { mutableStateOf("mehmet@test.com") }
     var password by remember { mutableStateOf("123") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -36,7 +38,7 @@ fun LoginScreen(
     }
 
     Scaffold(
-        containerColor = LightBackground // Tasarımdaki açık gri arka plan
+        containerColor = LightBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -46,7 +48,6 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // BAŞLIK ALANI (Serif font uyumu ile)
             Text(
                 text = "Auctionary",
                 style = MaterialTheme.typography.headlineLarge,
@@ -55,13 +56,12 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Lüks müzayedelere hoş geldiniz",
+                text = "Welcome to the premium quality auctions.",
                 fontSize = 14.sp,
                 color = LightTextSecondary,
                 modifier = Modifier.padding(bottom = 40.dp)
             )
 
-            // GİRİŞ FORMU KARTI
             Card(
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -72,11 +72,10 @@ fun LoginScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // EMAİL ALANI
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email Adresi", color = LightTextSecondary) },
+                        label = { Text("Email", color = LightTextSecondary) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         shape = RoundedCornerShape(12.dp),
@@ -92,11 +91,10 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ŞİFRE ALANI
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Şifre", color = LightTextSecondary) },
+                        label = { Text("Password", color = LightTextSecondary) },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
@@ -113,19 +111,38 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // GİRİŞ BUTONU
                     Button(
                         onClick = {
                             viewModel.login(email, password)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp), // Premium dokunma alanı genişliği
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurface), // Koyu ve şık buton
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Giriş Yap", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Login", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "No Account?",
+                            color = LightTextSecondary,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Sign Up",
+                            color = PrimaryGold,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable {onNavigateToRegister()}
+                        )
+                    }
+
 
                     if (errorMessage != null) {
                         Spacer(modifier = Modifier.height(16.dp))

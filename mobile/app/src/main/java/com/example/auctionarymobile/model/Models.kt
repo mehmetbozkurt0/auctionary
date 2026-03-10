@@ -28,6 +28,11 @@ data class Auction(
     @SerializedName("winner_id")
     val winnerId: String?,
 
+
+    @SerializedName("seller_id")
+    var sellerId: String,
+
+
     @SerializedName("end_time")
     val endTime: String,
 
@@ -46,6 +51,12 @@ data class LoginResponse(
 
     @SerializedName("user_id")
     val userId: Int,
+)
+
+data class RegisterRequest(
+    val username: String,
+    val email: String,
+    val password: String
 )
 
 data class WebSocketEvent(
@@ -95,7 +106,10 @@ data class CreateAuctionRequest (
     val imageUrl: String,
 
     @SerializedName("starting_price")
-    val startingPrice: Double
+    val startingPrice: Double,
+
+    @SerializedName("seller_id")
+    val sellerId: String
 )
 
 fun String.toImageBitmap(): ImageBitmap? {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,6 +24,7 @@ import com.example.auctionarymobile.ui.theme.*
 @Composable
 fun AppDrawerContent(
     username: String,
+    currentRoute: String,
     onNavigate: (String) -> Unit,
     onLogoutClick: () -> Unit
 ) {
@@ -65,9 +68,30 @@ fun AppDrawerContent(
         Spacer(Modifier.height(16.dp))
 
         // --- MENÜ SEÇENEKLERİ ---
-        DrawerMenuItem(icon = "👤", label = "Profil", onClick = { onNavigate("profile") })
-        DrawerMenuItem(icon = "🛍️", label = "Satın Aldıklarım", onClick = { onNavigate("purchased_items") })
-        DrawerMenuItem(icon = "📦", label = "Eklediğim Ürünler", onClick = { onNavigate("my_auctions") })
+        DrawerMenuItem(
+            icon = "\uD83C\uDFE0",
+            label = "Listings",
+            isSelected = currentRoute == "list",
+            onClick = { onNavigate("list") }
+        )
+        DrawerMenuItem(
+            icon = "\uD83D\uDC64",
+            label = "Profile",
+            isSelected = currentRoute == "profile",
+            onClick = { onNavigate("profile") }
+        )
+        DrawerMenuItem(
+            icon = "\uD83D\uDECD\uFE0F",
+            label = "Purchased",
+            isSelected = currentRoute == "purchased_items",
+            onClick = { onNavigate("purchased_items") },
+        )
+        DrawerMenuItem(
+            icon = "\uD83D\uDCE6",
+            label = "My Auctions",
+            isSelected = currentRoute == "my_auctions",
+            onClick = { onNavigate("my_auctions") },
+        )
 
         Spacer(Modifier.weight(1f))
 
@@ -76,10 +100,11 @@ fun AppDrawerContent(
 
         // --- ÇIKIŞ BUTONU ---
         DrawerMenuItem(
-            icon = "🚪",
-            label = "Çıkış Yap",
+            icon = "\uD83D\uDEAA",
+            label = "Log Out",
+            isSelected = false,
             onClick = onLogoutClick,
-            textColor = StatusError
+            textColor = StatusError,
         )
 
         Spacer(Modifier.height(32.dp))
@@ -87,12 +112,23 @@ fun AppDrawerContent(
 }
 
 @Composable
-fun DrawerMenuItem(icon: String, label: String, onClick: () -> Unit, textColor: Color = Color.White) {
+fun DrawerMenuItem(
+    icon: String,
+    label: String,
+    onClick: () -> Unit,
+    textColor: Color = Color.White,
+    isSelected: Boolean = false
+) {
+    val backgroundColor = if (isSelected) PrimaryGold.copy(alpha = 0.15f) else Color.Transparent
+    val contentColor = if (isSelected) PrimaryGold else textColor
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
             .clickable { onClick() }
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = icon, fontSize = 20.sp)
@@ -100,8 +136,8 @@ fun DrawerMenuItem(icon: String, label: String, onClick: () -> Unit, textColor: 
         Text(
             text = label,
             fontSize = 16.sp,
-            fontWeight = FontWeight.Medium,
-            color = textColor
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = contentColor
         )
     }
 }

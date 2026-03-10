@@ -54,9 +54,10 @@ func (p *PostgresDB) InitTables() {
            current_price DECIMAL(10,2),
            status VARCHAR(20),
            winner_id VARCHAR(50),
+           seller_id VARCHAR(50),
            end_time TIMESTAMP,
            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-       );  
+       );
     `
 
 	_, err := p.DB.Exec(auctionQuery)
@@ -85,8 +86,8 @@ func (p *PostgresDB) GetUserByEmail(email string) (*models.User, error) {
 
 func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 	query := `
-       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, winner_id, end_time)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, winner_id, seller_id, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10)
        ON CONFLICT (id) DO UPDATE 
        SET current_price = EXCLUDED.current_price, winner_id = EXCLUDED.winner_id, end_time = EXCLUDED.end_time;
     `
@@ -99,6 +100,7 @@ func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 		auction.StartingPrice,
 		auction.CurrentPrice,
 		auction.WinnerID,
+		auction.SellerID,
 		auction.EndTime,
 	)
 	return err
@@ -106,8 +108,8 @@ func (p *PostgresDB) SaveFinishedAuction(auction *models.Auction) error {
 
 func (p *PostgresDB) CreateNewAuction(auction *models.Auction) error {
 	query := `
-       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, status, end_time)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       INSERT INTO auctions (id, product_name, description, category, image_url, starting_price, current_price, status,seller_id, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     `
 	_, err := p.DB.Exec(query,
 		auction.ID,
@@ -118,12 +120,13 @@ func (p *PostgresDB) CreateNewAuction(auction *models.Auction) error {
 		auction.StartingPrice,
 		auction.CurrentPrice,
 		auction.Status,
+		auction.SellerID,
 		auction.EndTime)
 	return err
 }
 
 func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
-	query := `SELECT id, product_name, description, category, image_url, starting_price, current_price, status, end_time, winner_id FROM auctions`
+	query := `SELECT id, product_name, description, category, image_url, starting_price, current_price, status, end_time, winner_id, seller_id FROM auctions`
 
 	rows, err := p.DB.Query(query)
 	if err != nil {
@@ -135,6 +138,7 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 	for rows.Next() {
 		var a models.Auction
 		var winnerID sql.NullString
+		var sellerID sql.NullString
 
 		if err := rows.Scan(
 			&a.ID,
@@ -147,6 +151,7 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 			&a.Status,
 			&a.EndTime,
 			&winnerID,
+			&sellerID,
 		); err != nil {
 			log.Printf("Satır okuma hatası: %v", err)
 			return nil, err
@@ -154,6 +159,10 @@ func (p *PostgresDB) GetAllAuctions() ([]models.Auction, error) {
 
 		if winnerID.Valid {
 			a.WinnerID = winnerID.String
+		}
+
+		if sellerID.Valid {
+			a.SellerID = sellerID.String
 		}
 
 		if time.Now().Before(a.EndTime) && a.Status == "active" {

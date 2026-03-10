@@ -9,6 +9,7 @@ import com.example.auctionarymobile.model.BidPayload
 import com.example.auctionarymobile.model.BidUpdate
 import com.example.auctionarymobile.model.CreateAuctionRequest
 import com.example.auctionarymobile.model.LoginRequest
+import com.example.auctionarymobile.model.RegisterRequest
 import com.example.auctionarymobile.network.RetrofitClient
 import com.example.auctionarymobile.network.WebSocketManager
 import com.google.gson.Gson
@@ -63,6 +64,23 @@ class MainViewModel: ViewModel() {
         webSocketManager.disconnect()
 
         Log.d("ViewModel", "Kullanıcı çıkış yaptı ve oturum temizlendi.")
+    }
+
+    fun register(username: String, email: String, pass: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val request = RegisterRequest(username = username, email = email, password = pass)
+                val response = RetrofitClient.api.register(request)
+
+                if (response.isSuccessful) {
+                    onResult(true,null)
+                }else {
+                    onResult(false, "Cannot sign in. Username or password is already in use.")
+                }
+            } catch (e: Exception) {
+                Log.e("Register", "Error: ${e.message}")
+            }
+        }
     }
 
     fun loadAuctions() {
@@ -143,7 +161,8 @@ class MainViewModel: ViewModel() {
                     description = description,
                     category = category,
                     imageUrl = imageUrl,
-                    startingPrice = startingPrice
+                    startingPrice = startingPrice,
+                    sellerId = currentUsername
                 )
                 RetrofitClient.api.createAuction(request)
                 Log.d("ViewModel", "Product added successfully: $name")

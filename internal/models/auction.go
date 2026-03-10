@@ -12,6 +12,7 @@ type Auction struct {
 	StartingPrice float64   `json:"starting_price"`
 	CurrentPrice  float64   `json:"current_price"`
 	WinnerID      string    `json:"winner_id"`
+	SellerID      string    `json:"seller_id"`
 	EndTime       time.Time `json:"end_time"`
 	IsActive      bool      `json:"is_active"`
 }

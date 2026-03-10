@@ -3,13 +3,13 @@ package com.example.auctionarymobile.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,63 +30,80 @@ import com.example.auctionarymobile.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PurchasedItemsScreen(
+fun MyAuctionsScreen(
     viewModel: MainViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onCreateClick: () -> Unit
 ) {
     val auctions by viewModel.auctions.collectAsState()
     val currentUsername = viewModel.currentUsername.ifEmpty {
         AuthManager.getUsername() ?: ""
     }
-    val purchasedItems = auctions.filter { !it.isActive && it.winnerId == currentUsername}
+
+    val myAuctions = auctions.filter { it.sellerId == currentUsername }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {Text("Purchased Items", color = PrimaryGold, fontWeight = FontWeight.Bold)},
+                title = { Text("My Auctions", color = PrimaryGold, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = PrimaryGold)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Geri", tint = PrimaryGold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreateClick,
+                containerColor = DarkSurface,
+                contentColor = PrimaryGold,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Sell a product")
+            }
         },
         containerColor = LightBackground
     ) { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
-            if (purchasedItems.isEmpty()) {
+            if (myAuctions.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = "Empty Cart", modifier = Modifier.size(100.dp), tint = DividerColor)
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = "Empty Store!",
+                        modifier = Modifier.size(100.dp),
+                        tint = DividerColor
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "You haven't win an auction yet",
+                        text = "You have no item on sale right now.",
                         style = MaterialTheme.typography.titleLarge,
                         color = LightTextPrimary,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Join an auction to\nexpand your collection",
+                        text = "Let's start an auction and\nsell your stuff.",
                         color = LightTextSecondary,
                         fontSize = 14.sp,
                         textAlign = TextAlign.Center
                     )
                 }
-            }else {
+            } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(purchasedItems){auction ->
-                        PurchasedItemCard(auction = auction)
+                    items(myAuctions) { auction ->
+                        MyAuctionItemCard(auction = auction)
                     }
                 }
             }
@@ -95,7 +112,7 @@ fun PurchasedItemsScreen(
 }
 
 @Composable
-fun PurchasedItemCard(auction: Auction) {
+fun MyAuctionItemCard(auction: Auction) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -133,10 +150,11 @@ fun PurchasedItemCard(auction: Auction) {
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Price Paid", color = LightTextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "CURRENT PRİCE", color = LightTextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     Text(text = "${auction.currentPrice} ₺", color = PrimaryGold, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
+
             HorizontalDivider(color = DividerColor.copy(alpha = 0.5f))
 
             Row(
@@ -147,27 +165,14 @@ fun PurchasedItemCard(auction: Auction) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = "Success", tint = StatusSuccess, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Payment Received - Preparing to Shipment", color = StatusSuccess, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                if (auction.isActive) {
+                    Text(text = "🟢 Live auction continues", color = StatusSuccess, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                } else {
+                    Text(text = "🔴 Auction ended!", color = StatusError, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
 
-                Text(text = "Detail", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Manage", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
