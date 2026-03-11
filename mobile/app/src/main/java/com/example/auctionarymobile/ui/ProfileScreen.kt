@@ -30,24 +30,23 @@ fun ProfileScreen(
     onBackClick: () -> Unit
 ) {
     val username = viewModel.currentUsername.ifEmpty {
-        com.example.auctionarymobile.network.AuthManager.getUsername() ?: "Kullanıcı"
+        com.example.auctionarymobile.network.AuthManager.getUsername() ?: "User"
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profil", color = PrimaryGold, fontWeight = FontWeight.Bold) },
+                title = { Text("Profile", color = PrimaryGold, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Geri", tint = PrimaryGold)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = PrimaryGold)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBackground)
             )
         },
-        containerColor = LightBackground
+        containerColor = DarkBackground
     ) { paddingValues ->
-        // Ekran uzayacağı için verticalScroll ekledik
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -59,7 +58,7 @@ fun ProfileScreen(
             // --- PROFİL AVATARI VE BİLGİLER ---
             Surface(
                 shape = CircleShape,
-                color = DarkBackground,
+                color = DarkSurface,
                 border = BorderStroke(2.dp, PrimaryGold),
                 modifier = Modifier.size(100.dp),
                 shadowElevation = 8.dp
@@ -70,24 +69,24 @@ fun ProfileScreen(
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = username, style = MaterialTheme.typography.headlineMedium, color = LightTextPrimary, fontWeight = FontWeight.Bold)
-            Text(text = "Premium Üye", color = PrimaryGold, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(text = username, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(text = "Premium Member", color = PrimaryGold, fontSize = 14.sp, fontWeight = FontWeight.Medium)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            //Badges
+            // Badges
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 BadgeItem(icon = Icons.Default.Star, label = "First Bid", color = PrimaryGold)
-                BadgeItem(icon = Icons.Default.CheckCircle, label = "Collectioner", color = Color(0xFFC0C0C0))
+                BadgeItem(icon = Icons.Default.CheckCircle, label = "Collector", color = Color(0xFFC0C0C0))
                 BadgeItem(icon = Icons.Default.Favorite, label = "Fast Bidder", color = Color(0xFFCD7F32))
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            //Wallet
+            // Wallet
             Card(
                 colors = CardDefaults.cardColors(containerColor = DarkSurface),
                 shape = RoundedCornerShape(20.dp),
@@ -100,7 +99,7 @@ fun ProfileScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = "Mevcut Bakiye", color = LightTextSecondary, fontSize = 12.sp)
+                        Text(text = "Current Balance", color = DarkTextSecondary, fontSize = 12.sp)
                         Text(text = "12.450 ₺", color = PrimaryGold, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     }
                     Button(
@@ -108,7 +107,7 @@ fun ProfileScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryGold),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Yükle", tint = DarkSurface)
+                        Icon(Icons.Default.Add, contentDescription = "Add Money", tint = DarkSurface)
                     }
                 }
             }
@@ -116,53 +115,53 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // Interests
-            AlignLeftTitle("İlgi Alanları")
+            AlignLeftTitle("Interests")
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InterestChip("Autistic Guitars")
+                InterestChip("Acoustic Guitars")
                 InterestChip("Movie Posters")
-                InterestChip("Sport Cards")
+                InterestChip("Sports Cards")
                 InterestChip("Tarot Decks")
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            //Activities
+            // Activities
             AlignLeftTitle("Last Activities")
             Spacer(modifier = Modifier.height(16.dp))
             Column(modifier = Modifier.fillMaxWidth()) {
                 TimelineItem(
-                    title = "Vintage Aucustic Guitar için 4.500₺ teklif verdiniz.",
-                    time = "2 saat önce",
+                    title = "You placed a 4,500 ₺ bid on Vintage Acoustic Guitar.",
+                    time = "2 hours ago",
                     isLast = false
                 )
                 TimelineItem(
-                    title = "İmzalı Galatasaray forması müzayedesini takibe aldınız.",
-                    time = "Dün",
+                    title = "You followed the Signed Galatasaray Jersey auction.",
+                    time = "Yesterday",
                     isLast = false
                 )
                 TimelineItem(
-                    title = "Özel Seri Tarot Destesi müzayedesini kazandınız!",
-                    time = "3 gün önce",
+                    title = "You won the Special Edition Tarot Deck auction!",
+                    time = "3 days ago",
                     isLast = true
                 )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            //Settings
+            // Settings
             Button(
                 onClick = { /* Goes to settings */ },
                 colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Icon(Icons.Default.Settings, contentDescription = "Ayarlar", tint = PrimaryGold)
+                Icon(Icons.Default.Settings, contentDescription = "Settings", tint = PrimaryGold)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Hesap Ayarları", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Account Settings", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -170,11 +169,10 @@ fun ProfileScreen(
     }
 }
 
-
 @Composable
 fun AlignLeftTitle(title: String) {
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = LightTextPrimary, fontWeight = FontWeight.Bold)
+        Text(text = title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -190,7 +188,7 @@ fun BadgeItem(icon: ImageVector, label: String, color: Color) {
             Icon(icon, contentDescription = label, tint = color, modifier = Modifier.padding(12.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, fontSize = 12.sp, color = LightTextSecondary, fontWeight = FontWeight.Medium)
+        Text(text = label, fontSize = 12.sp, color = DarkTextSecondary, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -198,7 +196,7 @@ fun BadgeItem(icon: ImageVector, label: String, color: Color) {
 fun InterestChip(text: String) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color.Transparent,
+        color = DarkSurface,
         border = BorderStroke(1.dp, PrimaryGold),
         modifier = Modifier.padding(end = 4.dp)
     ) {
@@ -215,7 +213,6 @@ fun InterestChip(text: String) {
 @Composable
 fun TimelineItem(title: String, time: String, isLast: Boolean) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        // Sol Taraf: Çizgi ve Nokta
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(24.dp)) {
             Box(
                 modifier = Modifier
@@ -227,19 +224,18 @@ fun TimelineItem(title: String, time: String, isLast: Boolean) {
                 Box(
                     modifier = Modifier
                         .width(2.dp)
-                        .height(48.dp) // Çizgi uzunluğu
-                        .background(DividerColor)
+                        .height(48.dp)
+                        .background(DividerColor.copy(alpha = 0.3f))
                 )
             }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Sağ Taraf: Metinler
         Column(modifier = Modifier.padding(bottom = if (isLast) 0.dp else 16.dp)) {
-            Text(text = title, color = LightTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(text = title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = time, color = LightTextSecondary, fontSize = 12.sp)
+            Text(text = time, color = DarkTextSecondary, fontSize = 12.sp)
         }
     }
 }

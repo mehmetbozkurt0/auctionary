@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,19 +42,46 @@ fun AuctionListScreen(
 ) {
     val auctions by viewModel.auctions.collectAsState()
 
-    val activeAuctions = auctions.filter { it.isActive }
-    val pastAuctions = auctions.filter { !it.isActive }
+    // --- FİLTRELEME (STATES) ---
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("All") }
+    var showNotificationDialog by remember { mutableStateOf(false) }
+
+    // --- ANLIK FİLTRELEME ---
+    val filteredAuctions = auctions.filter { auction ->
+        val matchesSearch = auction.productName.contains(searchQuery, ignoreCase = true)
+        val matchesCategory = selectedCategory == "All" || auction.category.equals(selectedCategory, ignoreCase = true)
+        matchesSearch && matchesCategory
+    }
+
+    val activeAuctions = filteredAuctions.filter { it.isActive }
+    val pastAuctions = filteredAuctions.filter { !it.isActive }
+
+    if (showNotificationDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationDialog = false },
+            title = { Text("Notifications", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = { Text("You have no new notifications at the moment.", color = LightTextSecondary) },
+            confirmButton = {
+                TextButton(onClick = { showNotificationDialog = false }) {
+                    Text("Close", color = PrimaryGold, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     Scaffold(
-        containerColor = LightBackground,
+        containerColor = DarkBackground,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreateClick,
-                containerColor = DarkSurface,
-                contentColor = PrimaryGold,
+                containerColor = PrimaryGold,
+                contentColor = DarkBackground,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Yeni Ürün Ekle")
+                Icon(Icons.Default.Add, contentDescription = "Add New Item")
             }
         }
     ) { paddingValues ->
@@ -74,15 +103,15 @@ fun AuctionListScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.White,
-                            shadowElevation = 2.dp,
+                            color = DarkSurface,
+                            shadowElevation = 4.dp,
                             modifier = Modifier.size(40.dp)
                         ) {
                             IconButton(onClick = onMenuClick) {
                                 Icon(
                                     imageVector = Icons.Default.Menu,
-                                    contentDescription = "Menüyü Aç",
-                                    tint = LightTextPrimary
+                                    contentDescription = "Open Menu",
+                                    tint = Color.White
                                 )
                             }
                         }
@@ -90,31 +119,32 @@ fun AuctionListScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Column {
-                            Text(text = "WELCOME BACK", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                            Text(text = "Discover", style = MaterialTheme.typography.headlineLarge, color = LightTextPrimary)
+                            Text(text = "WELCOME BACK", color = PrimaryGold, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(text = "Discover", style = MaterialTheme.typography.headlineLarge, color = Color.White)
                         }
                     }
 
                     Surface(
                         shape = CircleShape,
-                        color = Color.White,
-                        shadowElevation = 2.dp,
+                        color = DarkSurface,
+                        shadowElevation = 4.dp,
                         modifier = Modifier.size(40.dp)
                     ) {
-                        IconButton(onClick = {  }) {
-                            Text("🔔", fontSize = 18.sp)
+                        IconButton(onClick = { showNotificationDialog = true }) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
+            // --- ARAMA KUTUSU ---
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
                     placeholder = { Text("Search auctions...", color = LightTextSecondary) },
-                    leadingIcon = { Text("🔍", fontSize = 18.sp, modifier = Modifier.padding(start = 12.dp)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search", tint = PrimaryGold) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
@@ -123,32 +153,36 @@ fun AuctionListScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = PrimaryGold,
-                        unfocusedContainerColor = Color.White,
-                        focusedContainerColor = Color.White
+                        unfocusedContainerColor = DarkSurface,
+                        focusedContainerColor = DarkSurface,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = PrimaryGold
                     ),
                     singleLine = true,
-                    enabled = false
+                    enabled = true
                 )
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
+            // --- KATEGORİLER ---
             item {
-                val categories = listOf("All", "Watches", "Vehicles", "Art", "Jewelry")
+                val categories = listOf("All", "Watches", "Vehicles", "Art", "Jewelry", "Other")
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
                     items(categories) { category ->
-                        val isSelected = category == "All"
+                        val isSelected = category == selectedCategory
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) PrimaryGold else Color.White,
-                            border = if (!isSelected) BorderStroke(1.dp, DividerColor) else null,
-                            modifier = Modifier.clickable {  }
+                            color = if (isSelected) PrimaryGold else DarkSurface,
+                            border = if (!isSelected) BorderStroke(1.dp, DividerColor.copy(alpha = 0.3f)) else null,
+                            modifier = Modifier.clickable { selectedCategory = category } // Kategori seçimi aktif
                         ) {
                             Text(
                                 text = category,
-                                color = if (isSelected) Color.White else LightTextPrimary,
+                                color = if (isSelected) DarkBackground else Color.White,
                                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                                 fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
@@ -159,10 +193,15 @@ fun AuctionListScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            if (auctions.isEmpty()) {
+            // --- LİSTELEME ---
+            if (filteredAuctions.isEmpty()) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = PrimaryGold)
+                        if (auctions.isEmpty()) {
+                            CircularProgressIndicator(color = PrimaryGold)
+                        } else {
+                            Text("No items found.", color = LightTextSecondary)
+                        }
                     }
                 }
             } else {
@@ -175,7 +214,7 @@ fun AuctionListScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.Bottom
                         ) {
-                            Text("Featured Live", style = MaterialTheme.typography.headlineMedium, color = LightTextPrimary, fontSize = 22.sp)
+                            Text("Featured Live", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontSize = 22.sp)
                             Text("${activeAuctions.size} Active", color = PrimaryGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -201,7 +240,7 @@ fun AuctionListScreen(
                         Text(
                             "Past Auctions",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = LightTextPrimary,
+                            color = Color.White,
                             fontSize = 20.sp,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
@@ -240,7 +279,7 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
                     timeLeft = String.format("%02d:%02d:%02d", hours, mins, secs)
                 }
             } catch (e: Exception) {
-                timeLeft = "Hata"
+                timeLeft = "Error"
             }
             delay(1000)
         }
@@ -248,16 +287,16 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
 
     Card(
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface), // Karanlık Kart
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        modifier = modifier.clickable { onClick(auction.id.toString()) }
+        modifier = modifier.clickable { onClick(auction.id) }
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(DarkBackground),
+                    .background(Color.Black),
                 contentAlignment = Alignment.BottomStart
             ) {
                 val imageBitmap = auction.imageUrl.toImageBitmap()
@@ -270,7 +309,7 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
                     )
                 }
                 Surface(
-                    color = Color.Black.copy(alpha = 0.5f),
+                    color = Color.Black.copy(alpha = 0.6f),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -287,7 +326,7 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
                 }
 
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Ends in $timeLeft", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Ends in $timeLeft", color = PrimaryGold, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(auction.productName, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontSize = 24.sp, maxLines = 1)
                 }
@@ -300,7 +339,7 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
             ) {
                 Column {
                     Text("CURRENT BID", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("${auction.currentPrice} ₺", color = PrimaryGold, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("${auction.currentPrice} ₺", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("STATUS", color = LightTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -315,11 +354,11 @@ fun FeaturedLiveCard(auction: Auction, modifier: Modifier = Modifier, onClick: (
 fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (String) -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick(auction.id.toString()) }
+            .clickable { onClick(auction.id) }
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -329,7 +368,7 @@ fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (S
                 modifier = Modifier
                     .size(80.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color.DarkGray),
+                    .background(Color.Black),
                 contentAlignment = Alignment.BottomCenter
             ) {
                 val imageBitmap = auction.imageUrl.toImageBitmap()
@@ -342,12 +381,12 @@ fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (S
                     )
                 }
                 Surface(
-                    color = StatusErrorBg,
+                    color = StatusError.copy(alpha = 0.8f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = "CLOSED",
-                        color = StatusError,
+                        color = Color.White,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 4.dp).wrapContentWidth(Alignment.CenterHorizontally)
@@ -358,19 +397,19 @@ fun PastAuctionItem(auction: Auction, modifier: Modifier = Modifier, onClick: (S
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(auction.productName, color = LightTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
+                Text(auction.productName, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("FINAL PRICE", color = LightTextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Text("${auction.currentPrice} ₺", color = DarkTextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("${auction.currentPrice} ₺", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
             Surface(
-                color = DividerColor,
+                color = DarkBackground,
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.height(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text("View", color = LightTextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("View", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }

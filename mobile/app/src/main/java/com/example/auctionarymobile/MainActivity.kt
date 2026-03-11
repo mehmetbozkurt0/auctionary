@@ -3,6 +3,7 @@ package com.example.auctionarymobile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
@@ -34,146 +35,154 @@ class MainActivity : ComponentActivity() {
         AuthManager.init(this)
         setContent {
             MaterialTheme {
-                val navController = rememberNavController()
-                val viewModel: MainViewModel = viewModel()
+                androidx.compose.material3.Surface(
+                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    color = com.example.auctionarymobile.ui.theme.DarkBackground
+                ){
+                    val navController = rememberNavController()
+                    val viewModel: MainViewModel = viewModel()
 
-                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                val scope = rememberCoroutineScope()
+                    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                    val scope = rememberCoroutineScope()
 
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.destination?.route
 
-                val userToken by viewModel.userToken.collectAsState()
-                val isUserLoggedIn = userToken != null || AuthManager.isLoggedIn()
+                    val userToken by viewModel.userToken.collectAsState()
+                    val isUserLoggedIn = userToken != null || AuthManager.isLoggedIn()
 
-                val startDestination = if (AuthManager.isLoggedIn()) "list" else "login"
+                    val startDestination = if (AuthManager.isLoggedIn()) "list" else "login"
 
-                if (AuthManager.isLoggedIn()) {
-                    val savedUsername = AuthManager.getUsername() ?: ""
-                    viewModel.restoreSession(savedUsername)
-                }
+                    if (AuthManager.isLoggedIn()) {
+                        val savedUsername = AuthManager.getUsername() ?: ""
+                        viewModel.restoreSession(savedUsername)
+                    }
 
-                ModalNavigationDrawer(
-                    drawerState = drawerState,
-                    gesturesEnabled = currentRoute != "login",
-                    drawerContent = {
-                        AppDrawerContent(
-                            username = viewModel.currentUsername.ifEmpty { AuthManager.getUsername() ?: "" },
-                            currentRoute = currentRoute ?: "list",
-                            onNavigate = { route ->
-                                scope.launch { drawerState.close() }
-                                if (currentRoute != route) {
-                                    navController.navigate(route) {
-                                        if (route == "list") {
-                                            popUpTo("list") {inclusive = true}
+                    ModalNavigationDrawer(
+                        drawerState = drawerState,
+                        gesturesEnabled = currentRoute != "login",
+                        drawerContent = {
+                            AppDrawerContent(
+                                username = viewModel.currentUsername.ifEmpty { AuthManager.getUsername() ?: "" },
+                                currentRoute = currentRoute ?: "list",
+                                onNavigate = { route ->
+                                    scope.launch { drawerState.close() }
+                                    if (currentRoute != route) {
+                                        navController.navigate(route) {
+                                            if (route == "list") {
+                                                popUpTo("list") {inclusive = true}
+                                            }
+                                        }
+                                    }
+                                    navController.navigate(route)
+                                },
+                                onLogoutClick = {
+                                    scope.launch {
+                                        drawerState.close()
+
+                                        viewModel.logout()
+                                        navController.navigate("login") {
+                                            popUpTo(0)
                                         }
                                     }
                                 }
-                                navController.navigate(route)
-                            },
-                            onLogoutClick = {
-                                scope.launch {
-                                    drawerState.close()
-
-                                    viewModel.logout()
-                                    navController.navigate("login") {
-                                        popUpTo(0)
+                            )
+                        }
+                    ) {
+                        NavHost(navController = navController, startDestination = startDestination) {
+                            composable("login") {
+                                LoginScreen(
+                                    viewModel = viewModel,
+                                    onLoginSuccess = {
+                                        navController.navigate("list") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    },
+                                    onNavigateToRegister = {
+                                        navController.navigate("register")
                                     }
-                                }
+                                )
                             }
-                        )
-                    }
-                ) {
-                    NavHost(navController = navController, startDestination = startDestination) {
-                        composable("login") {
-                            LoginScreen(
-                                viewModel = viewModel,
-                                onLoginSuccess = {
-                                    navController.navigate("list") {
-                                        popUpTo("login") { inclusive = true }
+
+                            composable("register") {
+                                RegisterScreen(
+                                    viewModel = viewModel,
+                                    onNavigateToLogin = {
+                                        navController.popBackStack()
+                                    },
+                                    onRegisterSuccess = {
+                                        navController.navigate("login")
                                     }
-                                },
-                                onNavigateToRegister = {
-                                    navController.navigate("register")
-                                }
-                            )
-                        }
+                                )
+                            }
 
-                        composable("register") {
-                            RegisterScreen(
-                                viewModel = viewModel,
-                                onNavigateToLogin = {
-                                    navController.popBackStack()
-                                },
-                                onRegisterSuccess = {
-                                    navController.navigate("login")
-                                }
-                            )
-                        }
-
-                        composable("list") {
-                            AuctionListScreen(
-                                viewModel = viewModel,
-                                onMenuClick = {
-                                    scope.launch { drawerState.open() }
-                                },
-                                onAuctionClick = { clickedAuctionId ->
-                                    navController.navigate("detail/$clickedAuctionId")
-                                },
-                                onCreateClick = {
-                                    navController.navigate("create")
-                                }
-                            )
-                        }
-
-                        composable("profile") {
-                            ProfileScreen(
-                                viewModel = viewModel,
-                                onBackClick = {navController.navigate("list") {
-                                    popUpTo("list") {inclusive = true}
-                                } }
-                            )
-                        }
-
-                        composable("purchased_items") {
-                            PurchasedItemsScreen(
-                                viewModel = viewModel,
-                                onBackClick = {navController.navigate("list"){
-                                    popUpTo("list") {inclusive = true}
-                                } }
-                            )
-                        }
-
-                        composable("my_auctions") {
-                            MyAuctionsScreen(
-                                viewModel = viewModel,
-                                onBackClick = {
-                                    navController.navigate("list") {
-                                        popUpTo("list") { inclusive = true }
+                            composable("list") {
+                                AuctionListScreen(
+                                    viewModel = viewModel,
+                                    onMenuClick = {
+                                        scope.launch { drawerState.open() }
+                                    },
+                                    onAuctionClick = { clickedAuctionId ->
+                                        navController.navigate("detail/$clickedAuctionId")
+                                    },
+                                    onCreateClick = {
+                                        navController.navigate("create")
                                     }
-                                },
-                                onCreateClick = {
-                                    navController.navigate("create")
-                                }
-                            )
-                        }
+                                )
+                            }
 
-                        composable("create") {
-                            CreateAuctionScreen(
-                                viewModel = viewModel,
-                                onBackClick = { navController.popBackStack() },
-                                onSuccess = { navController.popBackStack() }
-                            )
-                        }
+                            composable("profile") {
+                                ProfileScreen(
+                                    viewModel = viewModel,
+                                    onBackClick = {navController.navigate("list") {
+                                        popUpTo("list") {inclusive = true}
+                                    } }
+                                )
+                            }
 
-                        composable("detail/{auctionId}") { backStackEntry ->
-                            val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
+                            composable("purchased_items") {
+                                PurchasedItemsScreen(
+                                    viewModel = viewModel,
+                                    onBackClick = {navController.navigate("list"){
+                                        popUpTo("list") {inclusive = true}
+                                    } },
+                                    onAuctionClick = {auctionId ->
+                                        navController.navigate("detail/$auctionId")
+                                    }
+                                )
+                            }
 
-                            AuctionDetailScreen(
-                                auctionId = auctionId,
-                                viewModel = viewModel,
-                                onBackClick = { navController.popBackStack() }
-                            )
+                            composable("my_auctions") {
+                                MyAuctionsScreen(
+                                    viewModel = viewModel,
+                                    onBackClick = {
+                                        navController.navigate("list") {
+                                            popUpTo("list") { inclusive = true }
+                                        }
+                                    },
+                                    onCreateClick = {
+                                        navController.navigate("create")
+                                    }
+                                )
+                            }
+
+                            composable("create") {
+                                CreateAuctionScreen(
+                                    viewModel = viewModel,
+                                    onBackClick = { navController.popBackStack() },
+                                    onSuccess = { navController.popBackStack() }
+                                )
+                            }
+
+                            composable("detail/{auctionId}") { backStackEntry ->
+                                val auctionId = backStackEntry.arguments?.getString("auctionId") ?: ""
+
+                                AuctionDetailScreen(
+                                    auctionId = auctionId,
+                                    viewModel = viewModel,
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
                 }

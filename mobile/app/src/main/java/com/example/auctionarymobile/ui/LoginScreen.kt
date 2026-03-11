@@ -1,16 +1,17 @@
 package com.example.auctionarymobile.ui
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -25,6 +26,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
+    // Geliştirme kolaylığı için default değerleri bıraktım
     var email by remember { mutableStateOf("mehmet@test.com") }
     var password by remember { mutableStateOf("123") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -38,7 +40,7 @@ fun LoginScreen(
     }
 
     Scaffold(
-        containerColor = LightBackground
+        containerColor = DarkBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -51,21 +53,22 @@ fun LoginScreen(
             Text(
                 text = "Auctionary",
                 style = MaterialTheme.typography.headlineLarge,
-                color = LightTextPrimary,
-                fontSize = 40.sp
+                color = PrimaryGold,
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Welcome to the premium quality auctions.",
+                text = "Welcome to premium auctions",
                 fontSize = 14.sp,
-                color = LightTextSecondary,
+                color = DarkTextSecondary,
                 modifier = Modifier.padding(bottom = 40.dp)
             )
 
             Card(
                 shape = RoundedCornerShape(24.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -75,15 +78,15 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email", color = LightTextSecondary) },
+                        label = { Text("Email Address", color = DarkTextSecondary) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGold,
-                            unfocusedBorderColor = DividerColor,
-                            focusedTextColor = LightTextPrimary,
-                            unfocusedTextColor = LightTextPrimary,
+                            unfocusedBorderColor = DividerColor.copy(alpha = 0.3f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                             cursorColor = PrimaryGold
                         ),
                         modifier = Modifier.fillMaxWidth()
@@ -94,16 +97,16 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Password", color = LightTextSecondary) },
+                        label = { Text("Password", color = DarkTextSecondary) },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGold,
-                            unfocusedBorderColor = DividerColor,
-                            focusedTextColor = LightTextPrimary,
-                            unfocusedTextColor = LightTextPrimary,
+                            unfocusedBorderColor = DividerColor.copy(alpha = 0.3f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                             cursorColor = PrimaryGold
                         ),
                         modifier = Modifier.fillMaxWidth()
@@ -118,31 +121,45 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DarkSurface),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGold),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Login", color = PrimaryGold, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Sign In", color = DarkBackground, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = { /* TODO: Google SignIn eklenecek */ },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = BorderStroke(1.dp, DividerColor.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Google Icon",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Continue with Google", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "No Account?",
-                            color = LightTextSecondary,
-                            fontSize = 14.sp
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Don't have an account? ", color = DarkTextSecondary, fontSize = 14.sp)
                         Text(
                             text = "Sign Up",
                             color = PrimaryGold,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable {onNavigateToRegister()}
+                            modifier = Modifier.clickable { onNavigateToRegister() }
                         )
                     }
-
 
                     if (errorMessage != null) {
                         Spacer(modifier = Modifier.height(16.dp))
