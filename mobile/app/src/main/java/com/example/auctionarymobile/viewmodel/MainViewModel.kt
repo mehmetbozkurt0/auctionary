@@ -96,7 +96,7 @@ class MainViewModel: ViewModel() {
     }
 
     fun connectToSocket() {
-        val wsUrl = "ws://10.68.6.136:8080/ws"
+        val wsUrl = "ws://35.158.109.182:8080/ws"
 
         webSocketManager.connect(wsUrl)
 
